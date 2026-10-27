@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://image.fixoraa.tech/blurguard/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlurGuard — Photo Privacy Blur Tool | Blur Faces &amp; Plates Free</title>
+<meta name="description" content="BlurGuard is a free photo privacy blur tool. Brush blur or pixelate faces, number plates and private details in your browser, with strength control, undo and hold-to-compare.">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',system-ui,sans-serif;background:#09090b;color:#e4e4e7}
+.font-display{font-family:'Sora',sans-serif}
+canvas{touch-action:none}
+.stage{background-image:radial-gradient(circle at 1px 1px,#27272a 1px,transparent 0);background-size:22px 22px}
+input[type=range]{accent-color:#e11d48}
+.tool-btn.active{background:#e11d48;color:#fff;border-color:#e11d48}
+.mode-btn.active{background:#e11d48;color:#fff}
+details summary::-webkit-details-marker{display:none}
+</style>
+<script id="lib-blurguard">
+var BlurGuardLib = {
+  clamp: function (v, min, max) {
+    var n = Number(v);
+    if (!isFinite(n)) return min;
+    if (n < min) return min;
+    if (n > max) return max;
+    return n;
+  },
+  normalizeStrength: function (s) {
+    return Math.round(BlurGuardLib.clamp(s, 1, 100));
+  },
+  strengthToBlurRadius: function (s) {
+    var n = BlurGuardLib.normalizeStrength(s);
+    // 1 -> 1px, 100 -> 30px, linear
+    return Math.round((1 + (n - 1) * (29 / 99)) * 10) / 10;
+  },
+  strengthToPixelSize: function (s) {
+    var n = BlurGuardLib.normalizeStrength(s);
+    // 1 -> 4px blocks, 100 -> 48px blocks
+    return Math.round(4 + (n - 1) * (44 / 99));
+  },
+  normalizeBrushSize: function (s) {
+    return Math.round(BlurGuardLib.clamp(s, 8, 200));
+  },
+  brushRadiusFromSize: function (size) {
+    return BlurGuardLib.normalizeBrushSize(size) / 2;
+  },
+  mapPointerToCanvas: function (clientX, clientY, rectLeft, rectTop, rectWidth, rectHeight, naturalWidth, naturalHeight) {
+    if (!rectWidth || !rectHeight || !naturalWidth || !naturalHeight) return null;
+    var rx = (Number(clientX) - Number(rectLeft)) / rectWidth;
+    var ry = (Number(clientY) - Number(rectTop)) / rectHeight;
+    if (!isFinite(rx) || !isFinite(ry)) return null;
+    return {
+      x: Math.round(BlurGuardLib.clamp(rx, 0, 1) * naturalWidth),
+      y: Math.round(BlurGuardLib.clamp(ry, 0, 1) * naturalHeight),
+      inside: rx >= 0 && rx <= 1 && ry >= 0 && ry <= 1
+    };
+  },
+  distance: function (x1, y1, x2, y2) {
+    var dx = Number(x2) - Number(x1), dy = Number(y2) - Number(y1);
+    return Math.sqrt(dx * dx + dy * dy);
+  },
+  interpolateStamps: function (x1, y1, x2, y2, spacing) {
+    var sp = Number(spacing);
+    if (!isFinite(sp) || sp <= 0) sp = 10;
+    var d = BlurGuardLib.distance(x1, y1, x2, y2);
+    if (d === 0) return [{ x: x1, y: y1 }];
+    var steps = Math.max(1, Math.ceil(d / sp));
+    var pts = [];
+    for (var i = 0; i <= steps; i++) {
+      pts.push({ x: Math.round(x1 + (x2 - x1) * (i / steps)), y: Math.round(y1 + (y2 - y1) * (i / steps)) });
+    }
+    return pts;
+  },
+  createHistory: function (limit) {
+    var lim = Math.round(BlurGuardLib.clamp(limit || 20, 1, 50));
+    return { limit: lim, items: [] };
+  },
+  pushHistory: function (history, snapshot) {
+    if (!history || !Array.isArray(history.items)) return history;
+    if (snapshot === null || snapshot === undefined) return history;
+    history.items.push(snapshot);
+    while (history.items.length > history.limit) history.items.shift();
+    return history;
+  },
+  popHistory: function (history) {
+    if (!history || !Array.isArray(history.items) || history.items.length === 0) return null;
+    return history.items.pop();
+  },
+  canUndo: function (history) {
+    return !!(history && Array.isArray(history.items) && history.items.length > 0);
+  },
+  historySize: function (history) {
+    return history && Array.isArray(history.items) ? history.items.length : 0;
+  },
+  validateImageFile: function (type, sizeBytes) {
+    var allowed = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/bmp'];
+    if (!type || allowed.indexOf(String(type).toLowerCase()) === -1) return { ok: false, error: 'Please choose a PNG, JPG, WebP, GIF or BMP image.' };
+    var size = Number(sizeBytes);
+    if (!isFinite(size) || size <= 0) return { ok: false, error: 'That file looks empty. Choose a different image.' };
+    if (size > 25 * 1024 * 1024) return { ok: false, error: 'Image is larger than 25 MB. Please compress it first.' };
+    return { ok: true, error: '' };
+  },
+  scaledDimensions: function (w, h, maxDim) {
+    var width = Number(w), height = Number(h), max = Number(maxDim) || 1920;
+    if (!isFinite(width) || !isFinite(height) || width <= 0 || height <= 0) return null;
+    if (width <= max && height <= max) return { width: Math.round(width), height: Math.round(height), scaled: false };
+    var ratio = Math.min(max / width, max / height);
+    return { width: Math.round(width * ratio), height: Math.round(height * ratio), scaled: true };
+  },
+  formatBytes: function (bytes) {
+    var b = Number(bytes);
+    if (!isFinite(b) || b < 0) return '0 B';
+    if (b < 1024) return Math.round(b) + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(2) + ' MB';
+  },
+  effectLabel: function (mode, strength) {
+    var m = mode === 'pixelate' ? 'Pixelate' : 'Blur';
+    var n = BlurGuardLib.normalizeStrength(strength);
+    var level = n <= 33 ? 'Light' : (n <= 66 ? 'Medium' : 'Strong');
+    return m + ' · ' + level + ' (' + n + ')';
+  },
+  coveragePercent: function (strokes, imageArea) {
+    var area = Number(imageArea);
+    if (!isFinite(area) || area <= 0 || !Array.isArray(strokes)) return 0;
+    var covered = 0;
+    for (var i = 0; i < strokes.length; i++) {
+      var r = Number(strokes[i].radius) || 0;
+      covered += Math.PI * r * r;
+    }
+    var pct = (covered / area) * 100;
+    return Math.round(BlurGuardLib.clamp(pct, 0, 100) * 10) / 10;
+  }
+};
+if (typeof module !== 'undefined' && module.exports) { module.exports = BlurGuardLib; }
+
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is BlurGuard free and does my photo leave my device?","acceptedAnswer":{"@type":"Answer","text":"Yes, BlurGuard is completely free with unlimited use, and your photo never leaves your device. All blurring and pixelating happens locally in your browser on a canvas, so no image is uploaded to any server."}},{"@type":"Question","name":"What is the difference between blur and pixelate in BlurGuard?","acceptedAnswer":{"@type":"Answer","text":"Blur softens a region into a smooth haze that looks natural in family photos, while pixelate replaces the region with large visible blocks. Pixelate is usually stronger for number plates and documents because it destroys fine detail more aggressively at the same strength."}},{"@type":"Question","name":"Can I undo a stroke if I blur the wrong area?","acceptedAnswer":{"@type":"Answer","text":"Yes. Every brush stroke is saved to an undo stack of up to 20 steps. Click Undo to step back one stroke at a time, or use Reset to return to the original image and start again."}},{"@type":"Question","name":"How strong should the blur be for a face or number plate?","acceptedAnswer":{"@type":"Answer","text":"For faces in casual photos a strength of 50 to 70 is usually enough. For number plates, ID cards, addresses and anything that must never be recoverable, use 80 to 100 or switch to pixelate, and zoom your eye over the result before sharing."}},{"@type":"Question","name":"How does hold-to-compare work?","acceptedAnswer":{"@type":"Answer","text":"Press and hold the Hold to Compare button (or hold the C key) and the editor temporarily shows your original unedited photo. Release it and your blurred version returns instantly, so you can check coverage without losing any work."}},{"@type":"Question","name":"Which image formats and sizes does BlurGuard support?","acceptedAnswer":{"@type":"Answer","text":"BlurGuard accepts PNG, JPG, WebP, GIF and BMP images up to 25 MB. Very large photos are scaled to a maximum dimension of 1920 pixels for smooth editing, and you can download the finished image as PNG or JPG."}}]}
+</script>
+</head>
+<body id="top">
+<header class="sticky top-0 z-50 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-2.5">
+      <span class="w-9 h-9 rounded-lg bg-rose-600 flex items-center justify-center text-white font-display font-800 text-lg" aria-hidden="true">◐</span>
+      <span class="font-display font-bold text-xl tracking-tight text-white">Blur<span class="text-rose-500">Guard</span></span>
+    </a>
+    <nav class="flex items-center gap-2 sm:gap-4 text-sm font-medium">
+      <a href="#top" class="px-3 py-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-800">Home</a>
+      <a href="https://fixoraa.tech" class="px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-500">More Tools</a>
+    </nav>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6">
+  <section class="pt-8 pb-4 text-center sm:text-left">
+    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-3">
+      <span class="inline-flex items-center gap-1.5 bg-rose-600/15 text-rose-400 border border-rose-600/30 text-xs font-bold px-3 py-1.5 rounded-full">✓ Unlimited Free Usage</span>
+      <span class="inline-flex items-center gap-1.5 bg-zinc-800 text-zinc-300 text-xs font-semibold px-3 py-1.5 rounded-full">🔒 100% in your browser — no upload</span>
+      <span class="inline-flex items-center gap-1.5 bg-zinc-800 text-zinc-300 text-xs font-semibold px-3 py-1.5 rounded-full">No signup · No watermark</span>
+    </div>
+    <h1 class="font-display font-extrabold text-3xl sm:text-5xl text-white leading-tight">Photo Privacy <span class="text-rose-500">Blur Tool</span></h1>
+    <p class="mt-3 text-zinc-400 max-w-2xl text-base sm:text-lg">Paint over faces, number plates, house numbers and screens. Blur them smooth or pixelate them beyond recognition — then check your work with hold-to-compare before anyone else sees the photo.</p>
+  </section>
+
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- EDITOR CANVAS ARCHEtype -->
+  <section id="tool" class="mt-6 bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl" aria-label="BlurGuard editor">
+    <!-- editor top bar -->
+    <div class="flex flex-wrap items-center gap-2 px-4 py-3 bg-zinc-950 border-b border-zinc-800">
+      <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span><span class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span><span class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span>
+      <span id="fileNameLabel" class="ml-2 text-xs text-zinc-400 truncate max-w-[220px]">No image loaded</span>
+      <span class="ml-auto flex gap-2">
+        <button id="undoBtn" disabled class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 text-zinc-200 disabled:opacity-40 hover:bg-zinc-700">↩ Undo <span id="undoCount" class="text-rose-400"></span></button>
+        <button id="resetBtn" disabled class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-800 text-zinc-200 disabled:opacity-40 hover:bg-zinc-700">Reset</button>
+      </span>
+    </div>
+
+    <div class="grid lg:grid-cols-[250px_1fr_250px]">
+      <!-- LEFT TOOLBAR -->
+      <aside class="p-4 border-b lg:border-b-0 lg:border-r border-zinc-800 space-y-5 order-2 lg:order-1">
+        <div>
+          <label for="fileInput" class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">1 · Image</label>
+          <label class="block cursor-pointer text-center bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm px-4 py-3 rounded-xl transition">
+            📂 Open a photo
+            <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" class="hidden">
+          </label>
+          <button id="sampleBtn" class="mt-2 w-full text-xs font-semibold px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 hover:border-rose-500 hover:text-white">Try with a sample scene</button>
+          <p id="fileMeta" class="mt-2 text-[11px] text-zinc-500 leading-relaxed">PNG, JPG, WebP, GIF or BMP · up to 25 MB</p>
+        </div>
+        <div>
+          <span class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">2 · Effect</span>
+          <div class="grid grid-cols-2 gap-2" role="group" aria-label="Effect mode">
+            <button data-mode="blur" class="mode-btn active px-3 py-2.5 rounded-lg border border-zinc-700 text-sm font-semibold bg-zinc-800">〰 Blur</button>
+            <button data-mode="pixelate" class="mode-btn px-3 py-2.5 rounded-lg border border-zinc-700 text-sm font-semibold bg-zinc-800">▦ Pixelate</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-2" role="group" aria-label="Brush shape">
+            <button data-shape="circle" class="tool-btn shape-btn active px-3 py-2 rounded-lg border border-zinc-700 text-xs font-semibold bg-zinc-800">● Circle brush</button>
+            <button data-shape="rect" class="tool-btn shape-btn px-3 py-2 rounded-lg border border-zinc-700 text-xs font-semibold bg-zinc-800">▭ Rectangle</button>
+          </div>
+          <p class="mt-2 text-[11px] text-zinc-500">Rectangle is ideal for plates &amp; documents: drag a box over the area.</p>
+        </div>
+        <div>
+          <label for="strengthRange" class="flex justify-between text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2"><span>Strength</span><span id="strengthVal" class="text-rose-400 normal-case tracking-normal">60</span></label>
+          <input id="strengthRange" type="range" min="1" max="100" value="60" class="w-full">
+          <p id="effectLabel" class="mt-1 text-[11px] text-zinc-400">Blur · Medium (60)</p>
+          <div class="flex gap-1.5 mt-2">
+            <button data-preset="35" class="preset-btn flex-1 text-[11px] py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 font-semibold">Light 35</button>
+            <button data-preset="65" class="preset-btn flex-1 text-[11px] py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 font-semibold">Face 65</button>
+            <button data-preset="95" class="preset-btn flex-1 text-[11px] py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 font-semibold">Max 95</button>
+          </div>
+        </div>
+        <div>
+          <label for="brushRange" class="flex justify-between text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2"><span>Brush size</span><span id="brushVal" class="text-rose-400 normal-case tracking-normal">70 px</span></label>
+          <input id="brushRange" type="range" min="8" max="200" value="70" class="w-full">
+          <div class="flex items-center gap-3 mt-2"><span id="brushPreview" class="rounded-full border-2 border-rose-500 bg-rose-500/20 shrink-0" style="width:36px;height:36px"></span><span class="text-[11px] text-zinc-500">Live brush preview — the pink ring on the canvas matches this size.</span></div>
+        </div>
+      </aside>
+
+      <!-- CENTER STAGE -->
+      <div class="order-1 lg:order-2">
+        <div id="stage" class="stage relative bg-zinc-950 min-h-[320px] sm:min-h-[440px] flex items-center justify-center overflow-hidden">
+          <div id="emptyState" class="text-center px-6 py-16">
+            <div class="text-5xl mb-3" aria-hidden="true">🛡️</div>
+            <p class="font-display font-bold text-white text-lg">Drop a photo here, or open one</p>
+            <p class="text-sm text-zinc-500 mt-1 max-w-sm mx-auto">Your image is drawn onto a local canvas only. Nothing is uploaded, stored or sent anywhere.</p>
+          </div>
+          <canvas id="editCanvas" class="hidden max-w-full h-auto cursor-none shadow-2xl" aria-label="Photo editing canvas"></canvas>
+          <div id="brushCursor" class="hidden pointer-events-none absolute rounded-full border-2 border-rose-500 bg-rose-500/10 z-10" style="width:70px;height:70px"></div>
+          <div id="rectPreview" class="hidden pointer-events-none absolute border-2 border-dashed border-rose-400 bg-rose-500/10 z-10"></div>
+          <span id="compareBadge" class="hidden absolute top-3 left-3 z-20 bg-white text-zinc-900 text-xs font-bold px-3 py-1.5 rounded-full">ORIGINAL — release to return</span>
+        </div>
+        <p id="statusMsg" class="px-4 py-2.5 text-sm text-zinc-400 bg-zinc-950 border-t border-zinc-800 min-h-[40px]" role="status" aria-live="polite">Open a photo to start protecting it.</p>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <aside class="p-4 border-t lg:border-t-0 lg:border-l border-zinc-800 space-y-5 order-3">
+        <div>
+          <span class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">3 · Check your work</span>
+          <button id="compareBtn" disabled class="w-full px-4 py-3 rounded-xl bg-white text-zinc-900 font-bold text-sm disabled:opacity-40 select-none">👁 Hold to compare</button>
+          <p class="mt-1.5 text-[11px] text-zinc-500">Hold the button — or hold the <kbd class="bg-zinc-800 px-1 rounded">C</kbd> key — to peek at the original.</p>
+        </div>
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 space-y-1.5 text-xs">
+          <div class="flex justify-between"><span class="text-zinc-500">Dimensions</span><strong id="statDims" class="text-zinc-200">—</strong></div>
+          <div class="flex justify-between"><span class="text-zinc-500">Strokes applied</span><strong id="statStrokes" class="text-zinc-200">0</strong></div>
+          <div class="flex justify-between"><span class="text-zinc-500">Approx. coverage</span><strong id="statCoverage" class="text-zinc-200">0%</strong></div>
+          <div class="flex justify-between"><span class="text-zinc-500">Undo steps left</span><strong id="statUndo" class="text-zinc-200">0</strong></div>
+        </div>
+        <div>
+          <span class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">4 · Export</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="downloadPng" disabled class="px-3 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold disabled:opacity-40">↓ PNG</button>
+            <button id="downloadJpg" disabled class="px-3 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-bold disabled:opacity-40 border border-zinc-700">↓ JPG</button>
+          </div>
+          <button id="clearBtn" disabled class="mt-2 w-full text-xs font-semibold px-3 py-2 rounded-lg border border-zinc-700 text-zinc-400 disabled:opacity-40 hover:text-white hover:border-rose-500">Remove image</button>
+          <p class="mt-2 text-[11px] text-zinc-500 leading-relaxed">Tip: before posting, view the export at full size. If you can still read a plate or recognise a face, raise the strength and paint once more.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:300px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script>
+(function(grnp){
+var d = document,
+    s = d.createElement('script'),
+    l = d.currentScript || d.scripts[d.scripts.length - 1];
+s.settings = grnp || {};
+s.src = "\/\/peacefulbicycle.com\/bnXtVJsnd.GElF0oYVWQcY\/Qe\/mf9qu-ZqUtlZk\/PzTHcx1LM\/jWIZwkMTj\/U\/t-NrzmUnyOMsj\/AzydO\/Qx";
+s.async = true;
+s.referrerPolicy = 'no-referrer-when-downgrade';
+l.parentNode.insertBefore(s, l);
+})({})
+</script>
+    </div>
+  </div>
+</div>
+
+  <article class="prose-custom max-w-3xl mx-auto py-10 text-zinc-300 leading-relaxed space-y-5 text-[15px]">
+    <h2 class="font-display text-2xl sm:text-3xl font-bold text-white">Why blurring a photo before you share it matters more than ever</h2>
+    <p>A single photograph can quietly give away far more than the moment it was meant to capture. A car number plate reveals where a vehicle is registered and can be used to trace its owner. A house number and street sign together pinpoint an address. A school uniform, a workplace lanyard, a boarding pass, a parcel label, a computer screen in the background and even the reflection in a window can expose names, routines and locations. Once an image is posted publicly it can be copied, indexed, scraped and reshared within minutes, and deleting the original post rarely removes every copy. BlurGuard exists for the thirty seconds before you press share: it gives you a fast, private way to cover the details that should never have left your phone in the first place.</p>
+    <p>Photo privacy editing used to mean opening a heavy desktop editor, learning layers and masks, and exporting through menus designed for professionals. Most people skipped it, not because they did not care, but because the effort felt larger than the risk in that moment. A brush-based tool changes the equation completely. You open the picture, you paint directly over a face, a plate or a document with your finger or mouse, and the sensitive detail disappears under a smooth blur or a wall of chunky pixels. There is no account, no upload queue and no learning curve. When protection takes less than a minute, it actually happens — and that habit, repeated across every photo you publish, is what real privacy looks like in everyday life.</p>
+    <h2 class="font-display text-2xl font-bold text-white pt-4">Blur or pixelate: choosing the right cover</h2>
+    <p>Blur and pixelation look similar from a distance, but they destroy information in different ways, and the choice matters depending on what you are hiding. A Gaussian-style blur averages each pixel with its neighbours, melting fine detail into a soft haze. At moderate strength it is perfect for the background of a family photo: a bystander&rsquo;s face becomes unrecognisable while the image still looks warm and natural, because the colours and general shapes remain pleasing to the eye. Blur is the polite option — it says &ldquo;someone was here&rdquo; without saying who.</p>
+    <p>Pixelation, sometimes called mosaic censoring, works by dividing the region into blocks and filling each block with its average colour. Text, digits and facial features are broken into squares that carry almost none of the original information, which is why pixelate is the stronger choice for number plates, ID cards, addresses, QR codes, tickets and screens. At high strength with large blocks, a plate that was perfectly legible becomes a handful of coloured tiles. As a rule of thumb, use blur for people you want to anonymise gently, and pixelate for anything made of characters, numbers or machine-readable patterns, where even a faint ghost of the original shape could be enhanced or guessed.</p>
+    <p>Strength deserves a moment of honesty. Light blur is reversible in the minds of viewers more often than people expect: a slightly softened face can still be recognised by someone who knows the person, and a lightly blurred plate can sometimes be read by tilting a screen or boosting contrast. That is why BlurGuard pairs its strength slider with a hold-to-compare check and a clear recommendation — medium to strong settings for faces, maximum settings or pixelation for plates and documents. Privacy that only looks private is not privacy at all. Paint generously, extend the covered area a little beyond the edges of the sensitive detail, and always inspect the final export at full size before it leaves your device.</p>
+    <h2 class="font-display text-2xl font-bold text-white pt-4">A brush workflow built for real photos</h2>
+    <p>The editor is deliberately modelled on painting, because that is how people naturally think about covering something. The circular brush follows your pointer with a live pink ring sized exactly to your brush setting, so there are no surprises about what will be covered. Strokes are interpolated as you move, meaning fast sweeps produce a continuous ribbon of protection instead of a dotted trail with readable gaps between stamps — a small detail that makes a genuine difference on curved number plates and moving subjects. When a rectangular region is more appropriate, such as a document, a screen or a straight plate, switching to the rectangle tool lets you drag one clean box over the whole area in a single gesture.</p>
+    <p>Mistakes are part of editing, so every stroke lands on an undo stack that remembers up to twenty steps. Painted over a smile you wanted to keep? Undo once and only the last stroke disappears. Went too far across several strokes? Keep undoing, or reset to the untouched original and begin again with a smaller brush. This safety net encourages people to cover more rather than less, which is exactly the right instinct for privacy work. The statistics panel quietly reinforces it too, reporting how many strokes you have applied and roughly what share of the image is now covered, so a quick glance confirms the job is more than a token gesture.</p>
+    <p>Hold-to-compare solves the most common editing anxiety: am I sure I covered the right thing? Press and hold the compare button, or hold the C key, and the original photo flashes back; release, and your protected version returns instantly, with no risk of accidentally saving the original. Photographers have used before-and-after peeking for decades because the human eye spots differences far faster in motion than side by side. In a privacy tool it has a second job: it proves, in one glance, exactly which details the public version no longer contains.</p>
+    <h2 class="font-display text-2xl font-bold text-white pt-4">Private by design: editing that never uploads</h2>
+    <p>There is an obvious paradox in privacy tools that ask you to upload your most sensitive photos to a remote server in order to protect them. The unblurred original — the very image you judged too risky to post — travels across the internet, sits on someone else&rsquo;s storage, and depends on that company&rsquo;s promises, security and retention policy. BlurGuard removes the paradox entirely. The file you open is read locally by your browser and drawn onto a canvas element on your own device. Every blur, every pixel block and every export is computed there. Nothing is transmitted, nothing is stored, and closing the tab discards everything. You can verify this yourself by loading the page, switching your device to airplane mode, and editing quite happily offline.</p>
+    <p>Local editing also changes the speed and feel of the work. There is no progress bar while a server processes your image and no queue at busy times; brush strokes appear the instant you move. Large phone photos are handled sensibly, scaled to a maximum dimension that keeps editing smooth while preserving far more detail than social platforms will display anyway. Exports are offered as PNG for maximum quality or JPG for a smaller file that messaging apps will not recompress as aggressively. The entire experience respects a simple principle: a privacy tool should need to know nothing about you, not even temporarily.</p>
+    <h2 class="font-display text-2xl font-bold text-white pt-4">What to cover: a practical checklist</h2>
+    <p>Faces are the obvious starting point, especially children, bystanders, colleagues and anyone who has not agreed to appear publicly. Beyond faces, work through the frame systematically. Cover number plates on every vehicle, including reflections and cars parked in the background. Cover house numbers, street names and distinctive door colours when combined they reveal an address. Cover documents, letters, parcel labels, tickets, boarding passes and name badges, even when they look too small to read — modern phone cameras capture surprising detail, and images can be enlarged. Cover screens showing chats, emails, calendars, banking apps or location maps. Cover tattoos, uniforms and logos when they identify a school, employer or team for a child. Finally, check reflections in mirrors, windows and sunglasses, the classic hiding place of the photographer themselves.</p>
+    <p>It is also worth thinking about what blur cannot fix. Metadata embedded in a photo file, such as GPS coordinates recorded by a phone camera, travels with the image regardless of what you paint over it, so use your platform&rsquo;s metadata stripping or your phone&rsquo;s location-removal option when sharing. Likewise, a blurred landmark-heavy background can still reveal a location to someone determined, so crop tightly when the place itself is the secret. BlurGuard handles the visible layer thoroughly and quickly; pairing it with those two habits — strip metadata, crop with intent — gives you a genuinely robust routine that takes barely a minute per photo.</p>
+    <h2 class="font-display text-2xl font-bold text-white pt-4">Who uses a photo privacy blur tool?</h2>
+    <p>Parents use it to share proud moments without publishing their children&rsquo;s faces, schools or routines to the open internet. Drivers and riders use it before posting vehicle photos in enthusiast groups, keeping plates out of listings and screenshots. Sellers use it on marketplace photos taken outside their homes, hiding house numbers and plates from strangers who only need to see the item. Journalists, creators and community moderators use it to protect sources, customers and bystanders. Employers use it on workplace photos where screens, whiteboards and badges would otherwise leak internal information. Travellers use it on tickets and hotel documents in trip reports. In every case the pattern is identical: the photo tells the story, and BlurGuard makes sure it tells only the story.</p>
+    <p>Getting started takes seconds. Open a photo, choose blur for people or pixelate for plates and documents, set a generous strength, paint over each sensitive detail, hold to compare against the original, and download your protected copy. Build the habit once, and every image you share from then on carries a small, deliberate act of care — for yourself, for your family, and for everyone who happens to appear in your frame.</p>
+
+    <h2 class="font-display text-2xl font-bold text-white pt-6">Frequently asked questions</h2>
+    <div class="space-y-3 not-prose">
+      <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><summary class="font-semibold text-white cursor-pointer">Is BlurGuard free and does my photo leave my device?</summary><p class="mt-2 text-zinc-400">Yes, BlurGuard is completely free with unlimited use, and your photo never leaves your device. All blurring and pixelating happens locally in your browser on a canvas, so no image is uploaded to any server.</p></details>
+      <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><summary class="font-semibold text-white cursor-pointer">What is the difference between blur and pixelate in BlurGuard?</summary><p class="mt-2 text-zinc-400">Blur softens a region into a smooth haze that looks natural in family photos, while pixelate replaces the region with large visible blocks. Pixelate is usually stronger for number plates and documents because it destroys fine detail more aggressively at the same strength.</p></details>
+      <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><summary class="font-semibold text-white cursor-pointer">Can I undo a stroke if I blur the wrong area?</summary><p class="mt-2 text-zinc-400">Yes. Every brush stroke is saved to an undo stack of up to 20 steps. Click Undo to step back one stroke at a time, or use Reset to return to the original image and start again.</p></details>
+      <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><summary class="font-semibold text-white cursor-pointer">How strong should the blur be for a face or number plate?</summary><p class="mt-2 text-zinc-400">For faces in casual photos a strength of 50 to 70 is usually enough. For number plates, ID cards, addresses and anything that must never be recoverable, use 80 to 100 or switch to pixelate, and zoom your eye over the result before sharing.</p></details>
+      <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><summary class="font-semibold text-white cursor-pointer">How does hold-to-compare work?</summary><p class="mt-2 text-zinc-400">Press and hold the Hold to Compare button (or hold the C key) and the editor temporarily shows your original unedited photo. Release it and your blurred version returns instantly, so you can check coverage without losing any work.</p></details>
+      <details class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><summary class="font-semibold text-white cursor-pointer">Which image formats and sizes does BlurGuard support?</summary><p class="mt-2 text-zinc-400">BlurGuard accepts PNG, JPG, WebP, GIF and BMP images up to 25 MB. Very large photos are scaled to a maximum dimension of 1920 pixels for smooth editing, and you can download the finished image as PNG or JPG.</p></details>
+    </div>
+  </article>
+</main>
+
+<footer class="border-t border-zinc-800 bg-zinc-950">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-zinc-500">
+    <span class="font-display font-bold text-white">Blur<span class="text-rose-500">Guard</span></span>
+    <span>Blur faces &amp; plates before you share. Free, private, in your browser.</span>
+  </div>
+<p class="fx-credit" style="text-align:center;font-size:12.5px;opacity:.62;margin:10px auto 2px;letter-spacing:.01em">Made by <a href="https://fixoraa.tech" target="_blank" rel="noopener" style="color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px">Fixoraa</a></p>
+</footer>
+
+<script>
+(function(){
+  var L = BlurGuardLib;
+  var canvas = document.getElementById('editCanvas');
+  var ctx = canvas.getContext('2d');
+  var originalCanvas = document.createElement('canvas');
+  var octx = originalCanvas.getContext('2d');
+  var stage = document.getElementById('stage');
+  var emptyState = document.getElementById('emptyState');
+  var statusMsg = document.getElementById('statusMsg');
+  var brushCursor = document.getElementById('brushCursor');
+  var rectPreview = document.getElementById('rectPreview');
+  var state = { loaded:false, mode:'blur', shape:'circle', strength:60, brush:70, drawing:false, last:null, rectStart:null, strokes:[], history:L.createHistory(20), snapshotStack:[], fileName:'' };
+  function $(id){return document.getElementById(id);}
+  function setStatus(m){ statusMsg.textContent=m; }
+  function updateStats(){
+    $('statStrokes').textContent = state.strokes.length;
+    var area = canvas.width*canvas.height;
+    $('statCoverage').textContent = state.loaded ? L.coveragePercent(state.strokes, area)+'%' : '0%';
+    $('statUndo').textContent = L.historySize(state.history);
+    $('undoCount').textContent = L.canUndo(state.history) ? '('+L.historySize(state.history)+')' : '';
+    $('undoBtn').disabled = !L.canUndo(state.history);
+    $('resetBtn').disabled = !state.loaded;
+    $('compareBtn').disabled = !state.loaded;
+    $('downloadPng').disabled = !state.loaded;
+    $('downloadJpg').disabled = !state.loaded;
+    $('clearBtn').disabled = !state.loaded;
+    $('effectLabel').textContent = L.effectLabel(state.mode, state.strength);
+    $('strengthVal').textContent = state.strength;
+    $('brushVal').textContent = state.brush+' px';
+    var p=$('brushPreview'); var s=Math.max(14,Math.min(52,state.brush/3)); p.style.width=s+'px'; p.style.height=s+'px';
+  }
+  function pushUndo(){
+    try{
+      var snap = ctx.getImageData(0,0,canvas.width,canvas.height);
+      state.snapshotStack.push(snap);
+      if(state.snapshotStack.length>20) state.snapshotStack.shift();
+      L.pushHistory(state.history, Date.now());
+    }catch(e){}
+  }
+  function loadImage(img, name, sizeBytes){
+    var dims = L.scaledDimensions(img.naturalWidth||img.width, img.naturalHeight||img.height, 1920);
+    canvas.width=dims.width; canvas.height=dims.height;
+    originalCanvas.width=dims.width; originalCanvas.height=dims.height;
+    ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    octx.clearRect(0,0,canvas.width,canvas.height); octx.drawImage(img,0,0,canvas.width,canvas.height);
+    state.loaded=true; state.strokes=[]; state.history=L.createHistory(20); state.snapshotStack=[]; state.fileName=name||'photo';
+    canvas.classList.remove('hidden'); emptyState.classList.add('hidden');
+    $('fileNameLabel').textContent = state.fileName;
+    $('statDims').textContent = canvas.width+' × '+canvas.height;
+    $('fileMeta').textContent = (name?name+' · ':'') + (sizeBytes? L.formatBytes(sizeBytes)+' · ':'') + canvas.width+'×'+canvas.height + (dims.scaled?' (scaled for smooth editing)':'');
+    setStatus('Photo loaded. Paint over faces, plates or documents to protect them.');
+    updateStats();
+  }
+  function handleFile(file){
+    if(!file){ setStatus('No file selected. Choose a photo to begin.'); return; }
+    var v = L.validateImageFile(file.type, file.size);
+    if(!v.ok){ setStatus(v.error); return; }
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload=function(){ loadImage(img, file.name, file.size); URL.revokeObjectURL(url); };
+    img.onerror=function(){ setStatus('That image could not be opened. Try a PNG or JPG file.'); URL.revokeObjectURL(url); };
+    img.src=url;
+  }
+  $('fileInput').addEventListener('change', function(e){ handleFile(e.target.files[0]); });
+  ['dragover','dragenter'].forEach(function(ev){ stage.addEventListener(ev,function(e){e.preventDefault(); stage.classList.add('ring-2','ring-rose-500');});});
+  ['dragleave','drop'].forEach(function(ev){ stage.addEventListener(ev,function(e){e.preventDefault(); stage.classList.remove('ring-2','ring-rose-500');});});
+  stage.addEventListener('drop', function(e){ var f=e.dataTransfer.files && e.dataTransfer.files[0]; handleFile(f); });
+  $('sampleBtn').addEventListener('click', function(){
+    var c=document.createElement('canvas'); c.width=900; c.height=560; var g=c.getContext('2d');
+    g.fillStyle='#3f3f46'; g.fillRect(0,0,900,560); g.fillStyle='#52525b'; g.fillRect(0,360,900,200);
+    g.fillStyle='#18181b'; g.fillRect(90,300,720,150); g.fillStyle='#e11d48'; g.fillRect(130,330,640,70);
+    g.fillStyle='#fafafa'; g.fillRect(330,345,240,42); g.fillStyle='#18181b'; g.font='bold 26px monospace'; g.textAlign='center'; g.fillText('ABC-1234',450,375);
+    g.fillStyle='#fbbf24'; g.beginPath(); g.arc(180,180,62,0,7); g.fill(); g.fillStyle='#78350f'; g.beginPath(); g.arc(162,168,7,0,7); g.arc(198,168,7,0,7); g.fill(); g.strokeStyle='#78350f'; g.lineWidth=4; g.beginPath(); g.arc(180,188,24,0.2,2.9); g.stroke();
+    g.fillStyle='#e4e4e7'; g.fillRect(620,110,200,130); g.fillStyle='#27272a'; g.font='bold 15px sans-serif'; g.textAlign='left'; g.fillText('ID CARD',640,140); g.font='13px sans-serif'; g.fillText('Name: A. Example',640,170); g.fillText('No: 0000 1111 2222',640,195);
+    var img=new Image(); img.onload=function(){ loadImage(img,'sample-scene.png',0); setStatus('Sample loaded: try blurring the face, pixelating the plate and covering the ID card.'); };
+    img.src=c.toDataURL('image/png');
+  });
+  document.querySelectorAll('.mode-btn').forEach(function(b){ b.addEventListener('click',function(){ document.querySelectorAll('.mode-btn').forEach(function(x){x.classList.remove('active')}); b.classList.add('active'); state.mode=b.getAttribute('data-mode'); updateStats(); setStatus('Effect: '+L.effectLabel(state.mode,state.strength)+'. Paint over the area to apply it.'); });});
+  document.querySelectorAll('.shape-btn').forEach(function(b){ b.addEventListener('click',function(){ document.querySelectorAll('.shape-btn').forEach(function(x){x.classList.remove('active')}); b.classList.add('active'); state.shape=b.getAttribute('data-shape'); brushCursor.style.borderRadius = state.shape==='circle'?'50%':'6px'; });});
+  document.querySelectorAll('.preset-btn').forEach(function(b){ b.addEventListener('click',function(){ state.strength=L.normalizeStrength(b.getAttribute('data-preset')); $('strengthRange').value=state.strength; updateStats(); });});
+  $('strengthRange').addEventListener('input',function(e){ state.strength=L.normalizeStrength(e.target.value); updateStats(); });
+  $('brushRange').addEventListener('input',function(e){ state.brush=L.normalizeBrushSize(e.target.value); brushCursor.style.width=state.brush+'px'; brushCursor.style.height=state.brush+'px'; updateStats(); });
+
+  function posFromEvent(e){
+    var rect=canvas.getBoundingClientRect();
+    return L.mapPointerToCanvas(e.clientX,e.clientY,rect.left,rect.top,rect.width,rect.height,canvas.width,canvas.height);
+  }
+  function applyStamp(x,y){
+    var radius=L.brushRadiusFromSize(state.brush);
+    var size=radius*2;
+    var x0=Math.max(0,Math.floor(x-radius)), y0=Math.max(0,Math.floor(y-radius));
+    var x1=Math.min(canvas.width,Math.ceil(x+radius)), y1=Math.min(canvas.height,Math.ceil(y+radius));
+    var w=x1-x0, h=y1-y0; if(w<=0||h<=0) return;
+    ctx.save();
+    if(state.shape==='circle'){ ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.clip(); } else { ctx.beginPath(); ctx.rect(x0,y0,w,h); ctx.clip(); }
+    paintRegion(x0,y0,w,h);
+    ctx.restore();
+  }
+  function applyRect(xa,ya,xb,yb){
+    var x0=Math.max(0,Math.min(xa,xb)), y0=Math.max(0,Math.min(ya,yb));
+    var w=Math.min(canvas.width,Math.max(xa,xb))-x0, h=Math.min(canvas.height,Math.max(ya,yb))-y0;
+    if(w<4||h<4) return false;
+    ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,w,h); ctx.clip(); paintRegion(x0,y0,w,h); ctx.restore();
+    state.strokes.push({radius: Math.sqrt(w*h)/2});
+    return true;
+  }
+  function paintRegion(x0,y0,w,h){
+    if(state.mode==='pixelate'){
+      var block=L.strengthToPixelSize(state.strength);
+      var sw=Math.max(1,Math.round(w/block)), sh=Math.max(1,Math.round(h/block));
+      var tmp=document.createElement('canvas'); tmp.width=sw; tmp.height=sh; var tg=tmp.getContext('2d');
+      tg.drawImage(canvas,x0,y0,w,h,0,0,sw,sh);
+      ctx.imageSmoothingEnabled=false; ctx.drawImage(tmp,0,0,sw,sh,x0,y0,w,h); ctx.imageSmoothingEnabled=true;
+    } else {
+      var radius=L.strengthToBlurRadius(state.strength);
+      var tmp2=document.createElement('canvas'); tmp2.width=canvas.width; tmp2.height=canvas.height; var tg2=tmp2.getContext('2d');
+      tg2.drawImage(canvas,0,0);
+      try{ ctx.filter='blur('+radius+'px)'; }catch(e){}
+      ctx.drawImage(tmp2,0,0);
+      try{ ctx.filter='none'; }catch(e){}
+    }
+  }
+  canvas.addEventListener('pointerdown',function(e){
+    if(!state.loaded) return;
+    var p=posFromEvent(e); if(!p) return;
+    canvas.setPointerCapture(e.pointerId);
+    pushUndo(); state.drawing=true; state.last=p;
+    if(state.shape==='rect'){ state.rectStart=p; }
+    else { applyStamp(p.x,p.y); state.strokes.push({radius:L.brushRadiusFromSize(state.brush)}); updateStats(); }
+  });
+  canvas.addEventListener('pointermove',function(e){
+    var rect=canvas.getBoundingClientRect();
+    var sx=(state.brush/rect.width)*canvas.width; // display approx
+    brushCursor.classList.remove('hidden');
+    brushCursor.style.width=state.brush+'px'; brushCursor.style.height=state.brush+'px';
+    brushCursor.style.left=(e.clientX-stage.getBoundingClientRect().left-state.brush/2)+'px';
+    brushCursor.style.top=(e.clientY-stage.getBoundingClientRect().top-state.brush/2)+'px';
+    if(!state.drawing||!state.loaded) return;
+    var p=posFromEvent(e); if(!p) return;
+    if(state.shape==='rect' && state.rectStart){
+      var sr=canvas.getBoundingClientRect(); var scaleX=sr.width/canvas.width, scaleY=sr.height/canvas.height;
+      var left=Math.min(state.rectStart.x,p.x)*scaleX + (sr.left-stage.getBoundingClientRect().left);
+      var top=Math.min(state.rectStart.y,p.y)*scaleY + (sr.top-stage.getBoundingClientRect().top);
+      rectPreview.classList.remove('hidden');
+      rectPreview.style.left=left+'px'; rectPreview.style.top=top+'px';
+      rectPreview.style.width=Math.abs(p.x-state.rectStart.x)*scaleX+'px'; rectPreview.style.height=Math.abs(p.y-state.rectStart.y)*scaleY+'px';
+    } else if(state.last){
+      var spacing=Math.max(4, L.brushRadiusFromSize(state.brush)/2);
+      var pts=L.interpolateStamps(state.last.x,state.last.y,p.x,p.y,spacing);
+      for(var i=0;i<pts.length;i++) applyStamp(pts[i].x,pts[i].y);
+      state.last=p;
+    }
+  });
+  function endStroke(e){
+    if(state.drawing && state.shape==='rect' && state.rectStart){
+      var p=posFromEvent(e);
+      rectPreview.classList.add('hidden');
+      if(p && applyRect(state.rectStart.x,state.rectStart.y,p.x,p.y)){ setStatus('Rectangle protected with '+L.effectLabel(state.mode,state.strength)+'.'); }
+      else { // undo snapshot pushed but nothing applied: remove it
+        state.snapshotStack.pop(); L.popHistory(state.history);
+      }
+      state.rectStart=null;
+    } else if(state.drawing){ setStatus('Stroke applied: '+L.effectLabel(state.mode,state.strength)+'. Hold Compare to verify coverage.'); }
+    state.drawing=false; state.last=null; updateStats();
+  }
+  canvas.addEventListener('pointerup',endStroke);
+  canvas.addEventListener('pointercancel',endStroke);
+  canvas.addEventListener('pointerleave',function(){ brushCursor.classList.add('hidden'); });
+
+  $('undoBtn').addEventListener('click',function(){
+    var snap=state.snapshotStack.pop(); var h=L.popHistory(state.history);
+    if(snap){ ctx.putImageData(snap,0,0); state.strokes.pop(); setStatus('Last stroke undone.'); } else setStatus('Nothing left to undo.');
+    updateStats();
+  });
+  $('resetBtn').addEventListener('click',function(){
+    if(!state.loaded) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(originalCanvas,0,0);
+    state.strokes=[]; state.history=L.createHistory(20); state.snapshotStack=[]; setStatus('Reset to the original photo. All strokes removed.'); updateStats();
+  });
+  $('clearBtn').addEventListener('click',function(){
+    state.loaded=false; canvas.classList.add('hidden'); emptyState.classList.remove('hidden');
+    $('fileNameLabel').textContent='No image loaded'; $('statDims').textContent='—'; $('fileMeta').textContent='PNG, JPG, WebP, GIF or BMP · up to 25 MB';
+    state.strokes=[]; state.history=L.createHistory(20); state.snapshotStack=[]; $('fileInput').value='';
+    setStatus('Image removed from the editor. Nothing was saved anywhere.'); updateStats();
+  });
+  // Hold to compare
+  var comparing=false, saved=null;
+  function startCompare(){ if(!state.loaded||comparing) return; comparing=true; saved=ctx.getImageData(0,0,canvas.width,canvas.height); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(originalCanvas,0,0); $('compareBadge').classList.remove('hidden'); }
+  function endCompare(){ if(!comparing) return; comparing=false; if(saved) ctx.putImageData(saved,0,0); saved=null; $('compareBadge').classList.add('hidden'); }
+  var cb=$('compareBtn');
+  cb.addEventListener('pointerdown',function(e){e.preventDefault(); startCompare();});
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){ cb.addEventListener(ev,endCompare); });
+  document.addEventListener('keydown',function(e){ if((e.key==='c'||e.key==='C') && !e.metaKey && !e.ctrlKey) startCompare(); });
+  document.addEventListener('keyup',function(e){ if(e.key==='c'||e.key==='C') endCompare(); });
+  function download(type){
+    if(!state.loaded){ setStatus('Open a photo first, then download your protected copy.'); return; }
+    var a=document.createElement('a');
+    var base=(state.fileName||'photo').replace(/\.[^.]+$/,'');
+    if(type==='jpeg'){ a.download=base+'-protected.jpg'; a.href=canvas.toDataURL('image/jpeg',0.92); }
+    else { a.download=base+'-protected.png'; a.href=canvas.toDataURL('image/png'); }
+    document.body.appendChild(a); a.click(); a.remove();
+    setStatus('Downloaded your protected '+(type==='jpeg'?'JPG':'PNG')+'. Check it at full size before sharing.');
+  }
+  $('downloadPng').addEventListener('click',function(){download('png');});
+  $('downloadJpg').addEventListener('click',function(){download('jpeg');});
+  updateStats();
+})();
+</script>
+</body>
+</html>
