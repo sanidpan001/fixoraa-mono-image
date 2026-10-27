@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flash Guide Number Calculator — Distance, Aperture &amp; Power | FlashGuide</title>
+<meta name="description" content="Flash guide number math with modifiers, distance and aperture solver.">
+<link rel="canonical" href="https://image.fixoraa.tech/flashguide/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Flash Guide Number Calculator — Distance, Aperture &amp; Power | FlashGuide">
+<meta property="og:description" content="Flash guide number math with modifiers, distance and aperture solver.">
+<meta property="og:url" content="https://image.fixoraa.tech/flashguide/">
+<meta property="og:type" content="website">
+<script defer src="https://t.fixoraa.tech/track.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "FlashGuide",
+      "url": "https://image.fixoraa.tech/flashguide/",
+      "applicationCategory": "Photography Tools",
+      "operatingSystem": "Web",
+      "description": "Flash guide number math with modifiers, distance and aperture solver.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "What is a flash guide number?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The guide number (GN) measures a flash's power: GN = distance × f-number at ISO 100. A GN 60 flash (meters) correctly exposes a subject 5 meters away at f/12. Rearranged, the same formula solves for any variable — aperture, distance, or the GN you need — which is what this calculator does, including modifier and ISO corrections." } },
+        { "@type": "Question", "name": "How do I use guide number to set my flash manually?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Divide the guide number by your flash-to-subject distance to get the aperture: GN 60 ÷ 5 m = f/12 (use f/11). Then adjust for reality: raise ISO or open up for modifiers like softboxes, which eat 1–1.5 stops. Set the flash to manual at a power fraction near your computed need and fine-tune with a test shot." } },
+        { "@type": "Question", "name": "How much light does a softbox lose?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A softbox typically costs 1 to 1.5 stops of flash power, a shoot-through umbrella about 1 stop, a reflective umbrella about half a stop, and a beauty dish roughly two-thirds of a stop. In guide-number math, each stop of loss divides the effective GN by √2 (≈1.41). This calculator applies your modifier's loss before solving." } },
+        { "@type": "Question", "name": "Does ISO change the guide number?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Guide numbers are quoted at ISO 100, but effective GN scales with the square root of ISO: at ISO 400 the effective GN doubles, at ISO 200 it multiplies by 1.41. So a GN 60 flash behaves like GN 120 at ISO 400 — hugely useful when you need reach without more flash power." } },
+        { "@type": "Question", "name": "What do flash power fractions like 1/4 mean?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Each halving of power (1/1 → 1/2 → 1/4 → 1/8…) is exactly one stop less light. If full power gives you f/11 and you want f/5.6 — two stops less — set 1/4 power. Lower power also means dramatically faster recycle times and hundreds more flashes per battery set." } },
+        { "@type": "Question", "name": "Guide number in meters or feet?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Both exist — a GN 60 (meters) flash is GN 197 (feet); multiply meters by 3.28 to convert. Always check which unit your flash manual uses before doing math, or just use this calculator's unit toggle. Mixing meters-GN with feet-distance is the classic guide-number error." } }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+:root{
+  --bg:#E1F9F6; --surface:#FFFFFF; --tint:#D2F4F0;
+  --accent:#147B6E; --accent-deep:#5F5115; --accent-ink:#FFFFFF;
+  --ink:#33300F; --muted:#716A4A; --line:#E4DDBE;
+  --display:'Outfit',system-ui,sans-serif; --body:'Outfit',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.65;font-size:16px}
+.fx-container{max-width:1120px;margin:0 auto;padding:0 20px}
+/* header */
+.fx-header{background:var(--surface);border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:50}
+.fx-header .fx-container{display:flex;align-items:center;gap:14px;padding:12px 20px;flex-wrap:wrap}
+.fx-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.fx-tile{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#A68E2A,var(--accent-deep));color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 14px rgba(132,112,31,.45)}
+.fx-name{font-weight:800;font-size:21px;letter-spacing:-.01em}
+.fx-nav{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fx-btn{display:inline-block;padding:9px 18px;border-radius:999px;font-weight:700;font-size:14px;text-decoration:none;background:var(--tint);color:var(--accent-deep)}
+.fx-btn.solid{background:var(--accent);color:#fff}
+.fx-btn:hover{filter:brightness(.95)}
+.fx-badge{display:inline-block;padding:7px 14px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:13px}
+/* hero */
+.fg-hero{padding:38px 0 6px;text-align:center}
+.fg-hero h1{font-size:clamp(28px,4.4vw,44px);line-height:1.14;letter-spacing:-.02em;font-weight:800;margin-bottom:10px}
+.fg-hero h1 .eq{display:block;font-size:.5em;color:var(--accent);font-weight:600;letter-spacing:.04em;margin-bottom:8px}
+.fg-hero p{font-size:17px;color:var(--muted);max-width:640px;margin:0 auto}
+/* tool */
+.fg-card{margin:26px auto 8px;max-width:880px;background:var(--surface);border:2px solid var(--line);border-radius:24px;overflow:hidden}
+.fg-tabs{display:flex;background:var(--tint)}
+.fg-tabs button{flex:1;border:0;background:none;padding:16px 8px;font:inherit;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
+.fg-tabs button.on{color:var(--accent-deep);border-bottom-color:var(--accent);background:var(--surface)}
+.fg-body{padding:28px}
+.fg-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.field label{display:block;font-weight:700;font-size:13.5px;margin-bottom:8px}
+.field input[type=number],.field select{font:inherit;font-weight:600;padding:11px 13px;border:2px solid var(--line);border-radius:12px;width:100%;color:var(--ink);background:#fff}
+.field input:focus,.field select:focus{outline:3px solid var(--tint);border-color:var(--accent)}
+.mods{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.mods button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:9px 15px;font:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.mods button.on{border-color:var(--accent);background:var(--tint);color:var(--accent-deep)}
+.mods small{opacity:.75}
+.fg-result{background:var(--accent-deep);color:#fdf9ea;border-radius:18px;padding:26px;text-align:center;margin-bottom:18px}
+.fg-result .eq{font-size:15px;opacity:.85;margin-bottom:8px}
+.fg-result .ans{font-size:56px;font-weight:800;line-height:1.05}
+.fg-result .ans small{font-size:20px;font-weight:600}
+.fg-result .near{font-size:14px;margin-top:8px;opacity:.9}
+.fg-power{background:var(--tint);border-radius:18px;padding:22px}
+.fg-power h3{font-size:16px;font-weight:800;color:var(--accent-deep);margin-bottom:4px}
+.fg-power p{font-size:13.5px;color:var(--muted);margin-bottom:12px}
+.fg-power .row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.fg-power .out{font-size:15px;font-weight:700;color:var(--accent-deep);padding-bottom:12px}
+/* article */
+.article-sec{margin:40px auto;max-width:780px}
+.article-sec h2{font-size:23px;letter-spacing:-.015em;margin:34px 0 12px;font-weight:800;color:var(--accent-deep)}
+.article-sec p{margin-bottom:14px}
+.article-sec ul,.article-sec ol{margin:0 0 14px 22px}
+.article-sec li{margin-bottom:6px}
+/* faq */
+.faq-sec{margin:36px auto;max-width:780px}
+.faq-sec h2{font-size:23px;font-weight:800;letter-spacing:-.015em;margin-bottom:16px;color:var(--accent-deep)}
+.faq-sec details{background:var(--surface);border:2px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.faq-sec summary{padding:15px 18px;font-weight:700;cursor:pointer;list-style:none;font-size:15.5px}
+.faq-sec summary::-webkit-details-marker{display:none}
+.faq-sec summary:hover{color:var(--accent)}
+.faq-sec details[open] summary{border-bottom:2px solid var(--line);color:var(--accent-deep)}
+.faq-sec details p{padding:14px 18px;font-size:15px}
+/* footer */
+.fx-footer{background:var(--accent-deep);color:#f3ecd4;margin-top:44px;padding:40px 0 34px}
+.fx-footer .fx-brand{font-size:22px;font-weight:800;margin-bottom:8px;color:#fff}
+.fx-footer p{font-size:15px;color:#cfc39a;max-width:640px;margin-bottom:14px}
+.fx-footer nav{display:flex;gap:18px;margin-bottom:16px}
+.fx-footer nav a{color:#fff;font-weight:700;text-decoration:none;border-bottom:2px solid var(--accent)}
+.fx-credit{font-size:14px!important}
+.fx-credit a{color:#e3cf7e;font-weight:700}
+@media(max-width:760px){
+  .fg-grid{grid-template-columns:1fr}
+  .fg-power .row{grid-template-columns:1fr}
+  .fx-nav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<header class="fx-header">
+  <div class="fx-container">
+    <a class="fx-logo" href="https://image.fixoraa.tech/flashguide/" aria-label="FlashGuide home">
+      <span class="fx-tile" aria-hidden="true">⚡</span>
+      <span class="fx-name">FlashGuide</span>
+    </a>
+    <nav class="fx-nav" aria-label="Site">
+      <a class="fx-btn" href="https://fixoraa.tech">Home</a>
+      <a class="fx-btn solid" href="https://fixoraa.tech">More Tools</a>
+      <span class="fx-badge">&#8734; Unlimited Free Usage</span>
+    </nav>
+  </div>
+</header>
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+<main class="fx-container">
+  <section class="fg-hero">
+    <h1><span class="eq">GN = distance × f-number</span>Flash Guide Number Calculator</h1>
+    <p>One equation, three answers. Solve for aperture, distance, or the guide number you need — with modifier losses and ISO baked in.</p>
+  </section>
+
+  <section class="fg-card" aria-label="FlashGuide tool">
+    <div class="fg-tabs" id="fg-tabs" role="tablist" aria-label="Solve for">
+      <button type="button" role="tab" data-mode="aperture" class="on" aria-selected="true">Solve aperture</button>
+      <button type="button" role="tab" data-mode="distance" aria-selected="false">Solve distance</button>
+      <button type="button" role="tab" data-mode="gn" aria-selected="false">Solve GN needed</button>
+    </div>
+    <div class="fg-body">
+      <div class="fg-grid">
+        <div class="field" id="fg-f-gn">
+          <label for="fg-gn">Guide number <small>at ISO 100, flash manual</small></label>
+          <input type="number" id="fg-gn" value="60" min="1" max="500" step="1">
+        </div>
+        <div class="field" id="fg-f-dist">
+          <label for="fg-dist">Flash → subject <small id="fg-distunit">meters</small></label>
+          <input type="number" id="fg-dist" value="5" min="0.3" max="100" step="0.1">
+        </div>
+        <div class="field" id="fg-f-ap" style="display:none">
+          <label for="fg-ap">Aperture <small>f-number you want</small></label>
+          <select id="fg-ap">
+            <option>1.4</option><option>2</option><option selected>2.8</option><option>4</option><option>5.6</option><option>8</option><option>11</option><option>16</option><option>22</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fg-iso">ISO</label>
+          <select id="fg-iso">
+            <option selected>100</option><option>200</option><option>400</option><option>800</option><option>1600</option><option>3200</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:10px"><label>Units</label>
+        <div class="mods" id="fg-units" role="group" aria-label="Units">
+          <button type="button" data-u="m" class="on">Meters</button>
+          <button type="button" data-u="ft">Feet</button>
+        </div>
+      </div>
+      <div class="field"><label>Light modifier <small>loss applied to the guide number</small></label>
+        <div class="mods" id="fg-mods" role="group" aria-label="Modifier"></div>
+      </div>
+      <div class="fg-result" aria-live="polite">
+        <div class="eq" id="fg-eq">GN ÷ distance = aperture</div>
+        <div class="ans" id="fg-ans">–</div>
+        <div class="near" id="fg-near">–</div>
+      </div>
+      <div class="fg-power">
+        <h3>🔋 Manual power fraction helper</h3>
+        <p>Full-power aperture at your distance is computed automatically. Pick the aperture you actually want to shoot — the helper converts the difference into a power fraction.</p>
+        <div class="row">
+          <div class="field"><label for="fg-target">Target aperture</label>
+            <select id="fg-target">
+              <option>1.4</option><option>2</option><option>2.8</option><option>4</option><option>5.6</option><option selected>8</option><option>11</option><option>16</option><option>22</option>
+            </select>
+          </div>
+          <div class="field"><label>Full power gives</label><div class="out" id="fg-fullap">–</div></div>
+          <div class="out" id="fg-frac" style="font-size:22px">–</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <article class="article-sec" aria-label="Guide">
+    <h2>The One Equation That Runs Every Flash</h2>
+    <p>Before TTL metering, before through-the-lens anything, photographers exposed flash with a single equation: <strong>GN = distance × f-number</strong>. The guide number is a fixed property of your flash at full power and ISO 100; divide it by the flash-to-subject distance and you get the aperture for correct exposure. A GN 60 (meters) speedlight, subject 5 meters away: 60 ÷ 5 = f/12 — set f/11 and shoot. It is not an approximation or a rule of thumb; within the limits of the inverse-square law, it is physics.</p>
+    <p>Why bother in the TTL age? Because TTL meters the <em>reflected</em> scene and gets fooled by white dresses and black tuxedos, while guide-number math meters the <em>light itself</em> and never lies. Manual flash with GN math gives repeatable, consistent exposure shot after shot — the reason studio and event photographers still live by it.</p>
+    <h2>Guide Numbers: Meters, Feet, and Zoom Heads</h2>
+    <p>The first trap is units: guide numbers come in <strong>meters</strong> (GN 60) or <strong>feet</strong> (GN 197) — same flash, different numbers, related by ×3.28. Always confirm which your manual quotes, and never mix a meters-GN with a feet-distance. The second trap is the <strong>zoom head</strong>: a speedlight's GN changes with its zoom setting, from maybe GN 28 at 24mm to GN 60 at 200mm, because the head concentrates the beam. Use the GN for the zoom setting you are actually shooting — or better, set the zoom manually and note its GN from the manual's table.</p>
+    <p>Manufacturers quote GN at maximum zoom and ISO 100, which flatters the spec sheet. Your real-world number at 50mm zoom is considerably lower — one more reason to verify with a test shot rather than trust the headline.</p>
+    <h2>The Inverse-Square Law in Plain English</h2>
+    <p>Light falls off with the square of distance: double the distance, quarter the light (two stops). This is why GN math divides rather than subtracts, and why small distance changes matter hugely up close — moving a flash from 1 meter to 1.4 meters costs a full stop, while moving it from 10 to 10.4 meters costs almost nothing. Close-up flash work demands precision; distant flash is forgiving. It is also why bouncing flash off a ceiling costs so much light: the path is flash→ceiling→subject, often tripling the effective distance, which is 3+ stops gone before modifiers enter the picture.</p>
+    <h2>ISO: The Free Lunch</h2>
+    <p>Guide numbers are quoted at ISO 100, but effective GN scales with the <strong>square root of ISO</strong>: ×1.41 at ISO 200, ×2 at ISO 400, ×2.83 at ISO 800. A GN 60 flash becomes effectively GN 120 at ISO 400 — that is two free stops of reach with zero extra gear. The trade is noise, but modern sensors make ISO 800–1600 a perfectly reasonable flash-shooting range. When you are GN-limited (big room, high ceiling bounce), raising ISO is almost always smarter than buying a bigger flash.</p>
+    <h2>Modifiers: Paying for Softness</h2>
+    <p>Every modifier eats light — that is the price of softness. Typical losses: <strong>softbox 1–1.5 stops, shoot-through umbrella ~1 stop, reflective umbrella ~½ stop, beauty dish ~⅔ stop, grid ~1 stop</strong> (plus the beam-narrowing effect). In GN math, each stop of loss divides effective GN by √2 (≈1.41): a GN 60 flash through a 1.5-stop softbox behaves like GN 42. This calculator applies the modifier loss <em>before</em> solving, which is the step formula-only guides skip — and the step that explains why your softboxed exposure came out dark.</p>
+    <p>Distance still dominates: doubling the softbox distance costs two stops on top of the modifier's own loss. Big softbox close to the subject is the soft-light recipe precisely because proximity beats power.</p>
+    <h2>Power Fractions: Stops You Can Dial</h2>
+    <p>Manual flashes offer power in fractions — 1/1, 1/2, 1/4, down to 1/128 — where each step is <strong>exactly one stop</strong>. The conversion is simple: needed fraction = (target aperture ÷ full-power aperture)². Full power gives f/11 at your distance but you want f/5.6? (5.6/11)² ≈ ¼ — set 1/4 power. The helper above does this live. Beyond exposure, fractions control two precious resources: <strong>recycle time</strong> (1/4 power recycles in a fraction of a second versus several seconds at full) and <strong>battery life</strong> (hundreds of pops at 1/8 versus dozens at full). Shooting at the lowest fraction that does the job is simply professional.</p>
+    <h2>Putting It Together: A Real Workflow</h2>
+    <p>Here is the manual-flash workflow that never fails: (1) set your GN from the manual at your zoom setting; (2) estimate flash-to-subject distance; (3) pick your modifier and ISO; (4) solve for aperture with the calculator; (5) set the flash to the nearest power fraction via the helper; (6) take a test shot and nudge ±⅓ stop. Total time: under a minute. After a few sessions you will find yourself doing it by feel — but the calculator stays honest when the room changes.</p>
+    <h2>Multiple Flashes and Ratios</h2>
+    <p>GN math extends naturally to multi-light setups: compute each flash independently, then think in <strong>ratios</strong>. A key at f/8 and a fill at f/5.6 is a 2:1 ratio (one stop apart) — classic portrait lighting. Two equal flashes at the same distance double the light (one stop): GN_total = GN × √2 for identical units. Mixing brands is fine as long as each unit's GN is honest; when in doubt, meter or test-shoot the combined result, because reflector designs differ.</p>
+    <h2>When GN Math Breaks Down</h2>
+    <p>Honest limits: GN math assumes direct flash in open space. It breaks with heavy bounce (compute the total path and add 2–3 stops of bounce loss), with high-speed sync (HSS pulses the flash and costs 2+ stops — check your manual's HSS GN table), at very close distances where the flash tube's size matters, and with TTL auto modes doing their own thing. In those cases, use GN math as the starting point and the test shot as the truth.</p>
+    <h2>TTL vs. Manual: When Each Wins</h2>
+    <p>Through-the-lens metering fires a pre-flash, meters the reflection, and sets power automatically — brilliant for run-and-gun situations where distance changes every frame: weddings, events, journalism. But TTL meters <em>reflected</em> light, so a bride in white against a dark church fools it into underexposure, and a groom in black fools it the other way; pros ride the flash-exposure-compensation dial constantly. <strong>Manual with guide-number math</strong> wins wherever the setup is stable: studio portraits, product shots, real-estate interiors, multi-light scenes. The light never changes unless you change it, so exposure is identical frame to frame with zero hunting. Many photographers use a hybrid: GN math to establish the baseline ratio, then TTL for the key light when subjects move. Knowing both systems — and when to switch — is what separates flash owners from flash photographers, and the calculator above serves both styles equally well.</p>
+    <h2>Putting It All Together</h2>
+    <p>Guide numbers turn flash from mysticism into arithmetic: one equation, corrected for ISO and modifiers, solved for whichever variable you need. Set up above — GN, distance, modifier, ISO — read the aperture, dial the power fraction, and shoot. The test shot will confirm what the math already told you, and after a while you will barely need the calculator at all. That is the point: tools that teach.</p>
+  </article>
+  <section class="faq-sec" aria-label="Frequently asked questions">
+    <h2>Frequently asked questions</h2>
+    <details><summary>What is a flash guide number?</summary><p>The guide number (GN) measures a flash's power: GN = distance × f-number at ISO 100. A GN 60 flash (meters) correctly exposes a subject 5 meters away at f/12. Rearranged, the same formula solves for any variable — aperture, distance, or the GN you need — which is what this calculator does, including modifier and ISO corrections.</p></details>
+    <details><summary>How do I use guide number to set my flash manually?</summary><p>Divide the guide number by your flash-to-subject distance to get the aperture: GN 60 ÷ 5 m = f/12 (use f/11). Then adjust for reality: raise ISO or open up for modifiers like softboxes, which eat 1–1.5 stops. Set the flash to manual at a power fraction near your computed need and fine-tune with a test shot.</p></details>
+    <details><summary>How much light does a softbox lose?</summary><p>A softbox typically costs 1 to 1.5 stops of flash power, a shoot-through umbrella about 1 stop, a reflective umbrella about half a stop, and a beauty dish roughly two-thirds of a stop. In guide-number math, each stop of loss divides the effective GN by √2 (≈1.41). This calculator applies your modifier's loss before solving.</p></details>
+    <details><summary>Does ISO change the guide number?</summary><p>Guide numbers are quoted at ISO 100, but effective GN scales with the square root of ISO: at ISO 400 the effective GN doubles, at ISO 200 it multiplies by 1.41. So a GN 60 flash behaves like GN 120 at ISO 400 — hugely useful when you need reach without more flash power.</p></details>
+    <details><summary>What do flash power fractions like 1/4 mean?</summary><p>Each halving of power (1/1 → 1/2 → 1/4 → 1/8…) is exactly one stop less light. If full power gives you f/11 and you want f/5.6 — two stops less — set 1/4 power. Lower power also means dramatically faster recycle times and hundreds more flashes per battery set.</p></details>
+    <details><summary>Guide number in meters or feet?</summary><p>Both exist — a GN 60 (meters) flash is GN 197 (feet); multiply meters by 3.28 to convert. Always check which unit your flash manual uses before doing math, or just use this calculator's unit toggle. Mixing meters-GN with feet-distance is the classic guide-number error.</p></details>
+  </section>
+</main>
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:300px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script>
+      (function(grnp){
+      var d = document,
+          s = d.createElement('script'),
+          l = d.currentScript || d.scripts[d.scripts.length - 1];
+      s.settings = grnp || {};
+      s.src = "\/\/peacefulbicycle.com\/bnXtVJsnd.GElF0oYVWQcY\/Qe\/mf9qu-ZqUtlZk\/PzTHcx1LM\/jWIZwkMTj\/U\/t-NrzmUnyOMsj\/AzydO\/Qx";
+      s.async = true;
+      s.referrerPolicy = 'no-referrer-when-downgrade';
+      l.parentNode.insertBefore(s, l);
+      })({})
+      </script>
+    </div>
+  </div>
+</div>
+<footer class="fx-footer">
+  <div class="fx-container">
+    <div class="fx-brand">FlashGuide</div>
+    <p>FlashGuide solves the guide-number equation three ways — with modifier losses, ISO correction, and a power-fraction helper for manual flash.</p>
+    <nav aria-label="Footer">
+      <a href="https://fixoraa.tech">Home</a>
+      <a href="https://fixoraa.tech">More Tools</a>
+    </nav>
+    <p class="fx-credit">Made by <a href="https://fixoraa.tech">Fixoraa</a> &middot; Free forever, no signup.</p>
+  </div>
+</footer>
+<script>
+(function(){
+"use strict";
+var MODS=[
+  {id:'bare', n:'Bare / reflector', loss:0},
+  {id:'rumb', n:'Reflective umbrella', loss:0.5},
+  {id:'dish', n:'Beauty dish', loss:0.7},
+  {id:'sumb', n:'Shoot-through umbrella', loss:1},
+  {id:'grid', n:'Grid', loss:1},
+  {id:'soft', n:'Softbox', loss:1.5}
+];
+var STOPS=[1.4,2,2.8,4,5.6,8,11,16,22];
+var FRACS=['1/1','1/2','1/4','1/8','1/16','1/32','1/64','1/128'];
+function flashMath(o){
+  var mode=o.mode||'aperture';
+  var gn=Math.max(0.1,parseFloat(o.gn)||60);
+  var iso=Math.max(1,parseFloat(o.iso)||100);
+  var loss=0; for(var i=0;i<MODS.length;i++) if(MODS[i].id===o.mod) loss=MODS[i].loss;
+  var dist=Math.max(0.01,parseFloat(o.dist)||5);
+  var ap=parseFloat(o.aperture)||2.8;
+  var gnEff=gn*Math.sqrt(iso/100)/Math.pow(2,loss/2);
+  var r={gnEff:Math.round(gnEff*100)/100, loss:loss};
+  if(mode==='aperture'){ r.aperture=Math.round(gnEff/dist*100)/100; }
+  else if(mode==='distance'){ r.distance=Math.round(gnEff/ap*100)/100; }
+  else { r.gnNeeded=Math.round(dist*ap/Math.sqrt(iso/100)*Math.pow(2,loss/2)*10)/10; }
+  r.apFull=Math.round(gnEff/dist*100)/100;
+  return r;
+}
+function nearestStop(a){
+  var best=STOPS[0],bd=1e9;
+  STOPS.forEach(function(s){var d=Math.abs(Math.log(a/s));if(d<bd){bd=d;best=s;}});
+  return best;
+}
+function nearestFrac(f){
+  var vals=[1,0.5,0.25,0.125,0.0625,0.03125,0.015625,0.0078125];
+  var bi=0,bd=1e9;
+  vals.forEach(function(v,i){var d=Math.abs(Math.log(f/v));if(d<bd){bd=d;bi=i;}});
+  return FRACS[bi];
+}
+window.__fx = { flash: flashMath, _nearestFrac: nearestFrac, _nearestStop: nearestStop };
+
+var mode='aperture', modId='bare', unit='m';
+var modsEl=document.getElementById('fg-mods');
+MODS.forEach(function(md){
+  var b=document.createElement('button'); b.type='button';
+  b.innerHTML=md.n+' <small>−'+md.loss+' stop'+(md.loss===1?'':'s')+'</small>';
+  if(md.id===modId) b.classList.add('on');
+  b.addEventListener('click',function(){
+    modId=md.id;
+    Array.prototype.forEach.call(modsEl.children,function(x){x.classList.remove('on');});
+    b.classList.add('on'); calc();
+  });
+  modsEl.appendChild(b);
+});
+function read(){
+  return { mode:mode, gn:document.getElementById('fg-gn').value,
+    dist:document.getElementById('fg-dist').value,
+    aperture:document.getElementById('fg-ap').value,
+    iso:document.getElementById('fg-iso').value, mod:modId };
+}
+function calc(){
+  var m=read(), r=flashMath(m), u=unit==='m'?'m':'ft';
+  document.getElementById('fg-distunit').textContent=unit==='m'?'meters':'feet';
+  var ans=document.getElementById('fg-ans'), eq=document.getElementById('fg-eq'), near=document.getElementById('fg-near');
+  if(mode==='aperture'){
+    eq.textContent='GN ÷ distance = aperture  →  '+r.gnEff.toFixed(1)+' ÷ '+m.dist+' '+u;
+    ans.innerHTML='f/'+r.aperture.toFixed(1)+' <small>≈ f/'+nearestStop(r.aperture)+'</small>';
+    near.textContent='Effective GN '+r.gnEff.toFixed(1)+' after ISO ×'+(Math.sqrt(parseFloat(m.iso)/100)).toFixed(2)+' and −'+r.loss+' stop modifier.';
+  } else if(mode==='distance'){
+    eq.textContent='GN ÷ aperture = distance  →  '+r.gnEff.toFixed(1)+' ÷ f/'+m.aperture;
+    ans.innerHTML=r.distance.toFixed(1)+' <small>'+u+'</small>';
+    near.textContent='Place the flash '+r.distance.toFixed(1)+' '+u+' from the subject at f/'+m.aperture+'.';
+  } else {
+    eq.textContent='distance × aperture = GN needed (at ISO 100)';
+    ans.innerHTML='GN '+r.gnNeeded.toFixed(0);
+    near.textContent='You need a flash rated GN '+r.gnNeeded.toFixed(0)+' (ISO 100) or higher'+(r.loss>0?' — modifier loss included':'')+'.';
+  }
+  var target=parseFloat(document.getElementById('fg-target').value);
+  document.getElementById('fg-fullap').textContent='f/'+r.apFull.toFixed(1);
+  var frac=Math.pow(target/r.apFull,2);
+  document.getElementById('fg-frac').textContent='≈ '+nearestFrac(Math.min(1,frac))+' power';
+}
+document.getElementById('fg-tabs').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  mode=b.getAttribute('data-mode');
+  this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');x.setAttribute('aria-selected','false');});
+  b.classList.add('on'); b.setAttribute('aria-selected','true');
+  document.getElementById('fg-f-gn').style.display=mode==='gn'?'none':'';
+  document.getElementById('fg-f-dist').style.display='';
+  document.getElementById('fg-f-ap').style.display=mode==='aperture'?'none':'';
+  calc();
+});
+document.getElementById('fg-units').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  unit=b.getAttribute('data-u');
+  this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
+  b.classList.add('on'); calc();
+});
+['fg-gn','fg-dist','fg-ap','fg-iso','fg-target'].forEach(function(id){
+  var el2=document.getElementById(id);
+  el2.addEventListener('input',calc); el2.addEventListener('change',calc);
+});
+calc();
+})();
+</script>
+</body>
+</html>
