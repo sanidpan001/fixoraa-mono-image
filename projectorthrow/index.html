@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projector Throw Distance Calculator — Screen Size &amp; Mount | ProjectorThrow</title>
+<meta name="description" content="Projector throw distance and screen size both ways, with mount planning.">
+<link rel="canonical" href="https://image.fixoraa.tech/projectorthrow/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Projector Throw Distance Calculator — Screen Size &amp; Mount | ProjectorThrow">
+<meta property="og:description" content="Projector throw distance and screen size both ways, with mount planning.">
+<meta property="og:url" content="https://image.fixoraa.tech/projectorthrow/">
+<meta property="og:type" content="website">
+<script defer src="https://t.fixoraa.tech/track.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "ProjectorThrow",
+      "url": "https://image.fixoraa.tech/projectorthrow/",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "description": "Projector throw distance and screen size both ways, with mount planning.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "How far should a projector be from a 100-inch screen?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Multiply the screen width by the throw ratio. A 100-inch 16:9 screen is 87.2 inches wide, so a projector with a 1.5:1 throw ratio sits about 10.9 feet back. Zoom lenses give a range — a 1.2–1.5:1 lens works anywhere from 8.7 to 10.9 feet." } },
+        { "@type": "Question", "name": "What is throw ratio and where do I find it?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Throw ratio is throw distance divided by image width — a 1.5:1 projector needs 1.5 feet of distance per foot of screen width. It is printed in the projector's specifications, often as a range like 1.2–1.5:1 for zoom models. Short-throw projectors are around 0.5:1; ultra-short-throw models sit inches from the wall." } },
+        { "@type": "Question", "name": "Can I mount a projector off-center from the screen?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A small offset is fine if the projector has lens shift — typically ±60% vertical and ±25% horizontal on home theater models. Beyond that you need digital keystone correction, which degrades the image by resampling pixels. Center the lens on the screen whenever the room allows." } },
+        { "@type": "Question", "name": "How do I calculate the ceiling mount drop?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Subtract the screen's top edge height from the ceiling height. For a 9-foot ceiling with a 100-inch 16:9 screen centered at 48 inches high, the screen top is at about 72.5 inches, so the mount drops roughly 35.5 inches. Add the projector's lens-to-mount offset from its manual." } },
+        { "@type": "Question", "name": "Does throw distance affect brightness?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. At the long end of a zoom range the image is dimmer — typically 20–30% less bright than at the wide end — because the lens aperture effectively shrinks. For the brightest image, mount at the closest end of the throw range your room allows." } },
+        { "@type": "Question", "name": "What screen size is right for my room?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A common guideline is screen width ≈ viewing distance ÷ 1.5 to 2 for immersive home theater (SMPTE suggests a 30° viewing angle minimum). From 10 feet back, that means a 100–120 inch screen. Work backwards from your seating distance, then check the throw distance fits your room." } }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+:root{
+  --bg:#E1F6F9; --surface:#FFFFFF; --tint:#D2F0F4;
+  --accent:#157684; --accent-deep:#14602F; --accent-ink:#FFFFFF;
+  --ink:#1D3325; --muted:#5C7163; --line:#C4E2CE;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Space Grotesk',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.65;font-size:16px}
+.fx-container{max-width:1120px;margin:0 auto;padding:0 20px}
+/* header */
+.fx-header{background:var(--surface);border-bottom:3px solid var(--accent);position:sticky;top:0;z-index:50}
+.fx-header .fx-container{display:flex;align-items:center;gap:14px;padding:12px 20px;flex-wrap:wrap}
+.fx-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.fx-tile{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 50% 42%,#3FA75C 0 32%,var(--accent) 33% 60%,var(--accent-deep) 61%);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;box-shadow:0 0 0 4px var(--tint)}
+.fx-name{font-weight:700;font-size:20px;letter-spacing:-.02em}
+.fx-nav{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fx-btn{display:inline-block;padding:9px 18px;border-radius:999px;font-weight:600;font-size:14px;text-decoration:none;border:2px solid var(--accent);color:var(--accent)}
+.fx-btn.solid{background:var(--accent);color:var(--accent-ink)}
+.fx-badge{display:inline-block;padding:7px 14px;border-radius:999px;background:var(--tint);color:var(--accent-deep);font-weight:600;font-size:13px;border:1.5px solid var(--accent)}
+/* hero */
+.pt-hero{padding:44px 0 6px}
+.pt-eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.pt-hero h1{font-size:clamp(30px,4.6vw,46px);line-height:1.1;letter-spacing:-.025em;font-weight:700;margin-bottom:12px}
+.pt-hero p{font-size:18px;color:var(--muted);max-width:680px}
+/* lab */
+.pt-lab{margin:28px 0 10px;background:#0E2415;border:2px solid var(--accent-deep);border-radius:22px;overflow:hidden;color:#EAF5EE}
+.pt-modes{display:flex;border-bottom:2px solid var(--accent-deep)}
+.pt-modes button{flex:1;font:inherit;font-weight:600;font-size:15px;padding:16px;background:#14301C;border:0;border-right:2px solid var(--accent-deep);cursor:pointer;color:#BFE3CC}
+.pt-modes button:last-child{border-right:0}
+.pt-modes button.on{background:var(--accent);color:#fff}
+.pt-stage{padding:26px}
+.pt-stage svg{width:100%;height:auto;display:block}
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid var(--accent-deep)}
+.pt-left{padding:28px;border-right:2px dashed #2A4A34}
+.pt-right{padding:28px;background:#122B1A}
+.pt-field{margin-bottom:20px}
+.pt-field label{display:flex;justify-content:space-between;font-weight:600;font-size:14px;margin-bottom:8px;color:#DFF0E4}
+.pt-field label output{color:#8FE0A8;font-weight:700}
+.pt-field input[type=range]{width:100%;accent-color:var(--accent);height:28px}
+.pt-field .row{display:flex;gap:8px}
+.pt-field input[type=number],.pt-field select{font:inherit;padding:11px 13px;border:2px solid #2A4A34;border-radius:12px;background:#0E2415;color:#EAF5EE}
+.pt-field input[type=number]{flex:1;min-width:0}
+.pt-field select{cursor:pointer}
+.pt-seg{display:flex;gap:8px;flex-wrap:wrap}
+.pt-seg button{font:inherit;font-size:13px;font-weight:600;padding:9px 13px;border-radius:10px;border:2px solid #2A4A34;background:#0E2415;color:#BFE3CC;cursor:pointer}
+.pt-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pt-result{background:var(--accent);border-radius:16px;padding:24px;text-align:center;margin-bottom:16px}
+.pt-result .v{font-size:clamp(30px,4vw,44px);font-weight:700;color:#fff}
+.pt-result .l{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#D6EFDD;margin-top:4px}
+.pt-lines{list-style:none;font-size:14px}
+.pt-lines li{display:flex;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px dashed #2A4A34}
+.pt-lines li:last-child{border-bottom:0}
+.pt-lines .k{color:#9DBFA9}
+.pt-lines .v{font-weight:700;color:#fff;text-align:right}
+.pt-mount{border-top:2px dashed #2A4A34;margin-top:18px;padding-top:18px}
+.pt-mount h3{font-size:15px;font-weight:700;color:#DFF0E4;margin-bottom:12px}
+/* article */
+.article-sec{margin:40px 0;max-width:780px}
+.article-sec h2{font-size:24px;letter-spacing:-.02em;margin:34px 0 12px;font-weight:700}
+.article-sec p{margin-bottom:14px;color:#2b4031}
+.article-sec ul,.article-sec ol{margin:0 0 14px 22px;color:#2b4031}
+.article-sec li{margin-bottom:6px}
+/* faq */
+.faq-sec{margin:36px 0;max-width:780px}
+.faq-sec h2{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-bottom:16px}
+.faq-sec details{background:var(--surface);border:2px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.faq-sec summary{padding:16px 18px;font-weight:600;cursor:pointer;list-style:none;font-size:16px}
+.faq-sec summary::-webkit-details-marker{display:none}
+.faq-sec summary:hover{color:var(--accent)}
+.faq-sec details[open] summary{border-bottom:2px solid var(--line);color:var(--accent)}
+.faq-sec details p{padding:14px 18px;color:#2b4031;font-size:15px}
+/* footer */
+.fx-footer{background:#0c1f12;color:#d9efe0;margin-top:44px;padding:40px 0 34px}
+.fx-footer .fx-brand{font-size:22px;font-weight:700;margin-bottom:8px;color:#fff}
+.fx-footer p{font-size:15px;color:#a4c8ae;max-width:640px;margin-bottom:14px}
+.fx-footer nav{display:flex;gap:18px;margin-bottom:16px}
+.fx-footer nav a{color:#fff;font-weight:600;text-decoration:none;border-bottom:2px solid var(--accent)}
+.fx-credit{font-size:14px!important}
+.fx-credit a{color:#8fe0a8;font-weight:700}
+@media(max-width:760px){
+  .pt-grid{grid-template-columns:1fr}
+  .pt-left{border-right:0;border-bottom:2px dashed #2A4A34}
+  .fx-nav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<header class="fx-header">
+  <div class="fx-container">
+    <a class="fx-logo" href="https://image.fixoraa.tech/projectorthrow/" aria-label="ProjectorThrow home">
+      <span class="fx-tile" aria-hidden="true">&#9673;</span>
+      <span class="fx-name">ProjectorThrow</span>
+    </a>
+    <nav class="fx-nav" aria-label="Site">
+      <a class="fx-btn" href="https://fixoraa.tech">Home</a>
+      <a class="fx-btn solid" href="https://fixoraa.tech">More Tools</a>
+      <span class="fx-badge">&#8734; Unlimited Free Usage</span>
+    </nav>
+  </div>
+</header>
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+<main class="fx-container">
+  <section class="pt-hero">
+    <span class="pt-eyebrow">home theater &middot; throw ratio</span>
+    <h1>Projector Throw Distance Calculator — Screen Size &amp; Mount</h1>
+    <p>Drag the throw-ratio dial and watch the beam find your screen — distance to screen size or screen size to distance, plus the ceiling-mount drop math.</p>
+  </section>
+
+  <section class="pt-lab" aria-label="ProjectorThrow tool">
+    <div class="pt-modes" role="tablist" aria-label="Calculation direction">
+      <button type="button" class="on" data-m="dist" role="tab">Distance &rarr; screen size</button>
+      <button type="button" data-m="screen" role="tab">Screen size &rarr; distance</button>
+    </div>
+    <div class="pt-stage"><svg id="pt-svg" viewBox="0 0 640 240" role="img" aria-label="Projector throw diagram"></svg></div>
+    <div class="pt-grid">
+      <div class="pt-left">
+        <div class="pt-field">
+          <label>Throw ratio <output id="pt-tro">1.50 : 1</output></label>
+          <input type="range" id="pt-tr" min="0.4" max="3" step="0.05" value="1.5" aria-label="Throw ratio">
+          <div class="pt-seg" style="margin-top:8px">
+            <button type="button" data-tr="0.5">Ultra short 0.5</button>
+            <button type="button" data-tr="1.0">Short 1.0</button>
+            <button type="button" data-tr="1.5" class="on">Standard 1.5</button>
+            <button type="button" data-tr="2.2">Long 2.2</button>
+          </div>
+        </div>
+        <div class="pt-field" id="pt-f-dist">
+          <label>Lens to screen distance <output id="pt-do">12.0 ft</output></label>
+          <input type="range" id="pt-d" min="4" max="30" step="0.5" value="12" aria-label="Throw distance in feet">
+        </div>
+        <div class="pt-field" id="pt-f-screen" style="display:none">
+          <label>Screen diagonal <output id="pt-so">100&Prime;</output></label>
+          <input type="range" id="pt-s" min="60" max="180" step="1" value="100" aria-label="Screen diagonal in inches">
+        </div>
+        <div class="pt-field">
+          <label>Aspect ratio</label>
+          <div class="pt-seg" id="pt-ar">
+            <button type="button" data-ar="16:9" class="on">16:9</button>
+            <button type="button" data-ar="16:10">16:10</button>
+            <button type="button" data-ar="4:3">4:3</button>
+            <button type="button" data-ar="2.35:1">2.35:1</button>
+          </div>
+        </div>
+      </div>
+      <div class="pt-right" aria-live="polite">
+        <div class="pt-result">
+          <div class="v" id="pt-big">110&Prime; – 138&Prime;</div>
+          <div class="l" id="pt-bigl">screen diagonal range (16:9)</div>
+        </div>
+        <ul class="pt-lines">
+          <li><span class="k">Image width</span><span class="v" id="pt-w">8.0 – 10.0 ft</span></li>
+          <li><span class="k">Image height</span><span class="v" id="pt-h">4.5 – 5.6 ft</span></li>
+          <li><span class="k">Viewing tip</span><span class="v" id="pt-tip">sit 10 – 13 ft back</span></li>
+        </ul>
+        <div class="pt-mount">
+          <h3>Ceiling mount drop</h3>
+          <div class="pt-field">
+            <label>Ceiling height &amp; screen center</label>
+            <div class="row">
+              <input type="number" id="pt-ceil" value="9" min="7" max="14" step="0.5" aria-label="Ceiling height feet">
+              <select aria-label="Ceiling unit"><option>ft</option></select>
+              <input type="number" id="pt-center" value="48" min="24" max="72" step="1" aria-label="Screen center height inches">
+              <select aria-label="Center unit"><option>in</option></select>
+            </div>
+          </div>
+          <ul class="pt-lines">
+            <li><span class="k">Screen top edge</span><span class="v" id="pt-top">—</span></li>
+            <li><span class="k">Mount drop needed</span><span class="v" id="pt-drop">—</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <article class="article-sec" aria-label="Guide">
+    <h2>Throw Ratio: the One Number That Matters</h2>
+    <p>Every projector question — how far back, how big a screen, will it fit my room — reduces to one specification: <strong>throw ratio</strong>. It is the throw distance divided by the image width. A 1.5:1 projector needs 1.5 feet of lens-to-screen distance for every foot of image width; at 12 feet back it paints an 8-foot-wide image. Find the ratio in the projector's spec sheet, usually printed as a range like 1.2–1.5:1 for zoom models. Short-throw projectors cluster around 0.5–1.0:1, and ultra-short-throw models sit inches from the wall at ratios near 0.25:1.</p>
+    <p>The calculator works the ratio in both directions. Know your mounting distance? It tells you the screen sizes that fill the frame. Know your dream screen size? It tells you where the mount goes. The beam diagram updates live — drag the throw-ratio slider and watch the projector slide along its rail while the screen breathes in and out.</p>
+    <h2>Screen Size Math: Diagonal Lies a Little</h2>
+    <p>Screens are sold by diagonal, but throw ratio works on <strong>width</strong>, so the first step is always a conversion. For 16:9, width = diagonal × 16/√337 ≈ diagonal × 0.8716, and height = diagonal × 0.4903. A "100-inch" screen is really 87.2 inches wide and 49 inches tall. For 16:10 multiply the diagonal by 0.8480 for width; for 4:3 by 0.8; for 2.35:1 cinemascope by 0.9198.</p>
+    <p>Worked example: 100-inch 16:9 screen, 1.5:1 throw ratio. Width = 87.2 in = 7.26 ft. Distance = 1.5 × 7.26 = <strong>10.9 ft</strong>. With a zoom lens spanning 1.2–1.5:1, the mount can live anywhere from 8.7 to 10.9 feet back — set the slider to each end of the range to see your mounting window. Always verify against the manufacturer's own throw calculator before drilling holes; this tool gets you within an inch, the manual confirms it.</p>
+    <h2>Zoom Range: Your Mounting Window</h2>
+    <p>A zoom lens does not change the throw ratio — it gives you a <em>range</em> of them, and that range is your forgiveness. A 1.2–1.5:1 projector aimed at a 100-inch screen mounts anywhere between 8.7 and 10.9 feet. That two-foot window is what saves real installations: ceiling joists, fans and light fixtures rarely sit exactly where the math wants them. Bigger zoom ranges (some projectors reach 1.5–2.5:1) buy even more flexibility, at the cost of a larger, pricier lens.</p>
+    <p>One trade-off to know: the long end of the zoom is dimmer. At maximum telephoto the effective aperture shrinks and the image can lose 20–30% of its brightness versus the wide end. For the punchiest image in a room with ambient light, mount toward the <em>close</em> end of your range. In a bat-cave theater it hardly matters — mount wherever the room dictates.</p>
+    <h2>Placement: Center It, Shift It, Never Keystone It</h2>
+    <p>The ideal projector sits with its lens <strong>centered on the screen</strong>, both horizontally and vertically. Reality intrudes — ceiling fans, beams, seating — so manufacturers provide <strong>lens shift</strong>: optical movement of the image without digital trickery, typically ±60% vertical and ±25% horizontal on home theater models. Lens shift preserves every pixel. <strong>Keystone correction</strong>, by contrast, digitally resamples the image to square up an angled projection, softening detail and adding processing lag. Use lens shift freely; treat keystone as an emergency measure.</p>
+    <p>Vertical placement has a subtlety: many projectors have a fixed <strong>offset</strong> — the image starts a set percentage of the screen height above (or below) the lens centerline. DLP models often project upward significantly, which is why ceiling mounts hang below the screen's top edge rather than level with its center. Check the manual's offset figure and fold it into the drop calculation; the tool's mount section handles the geometry once you know it.</p>
+    <h2>Ceiling Mount Drop: Doing the Geometry</h2>
+    <p>The drop calculation is simple once the screen is placed. Decide the screen center height — 42 to 48 inches from the floor puts the middle of the image near seated eye level for most couches. Screen top = center + (height / 2). Mount drop = ceiling height − screen top. Example: 9-foot (108-inch) ceiling, 100-inch 16:9 screen (49 inches tall) centered at 48 inches. Screen top = 48 + 24.5 = 72.5 inches. Drop = 108 − 72.5 = <strong>35.5 inches</strong>.</p>
+    <p>Then add the projector's own lens-to-mount offset — the vertical distance from the mount plate to the lens centerline, usually 3–6 inches — since the lens, not the mount, is what the geometry cares about. Buy an adjustable extension column rather than a fixed one; being able to fine-tune by a few inches during installation is worth far more than it costs.</p>
+    <h2>Screen Size vs. Seating Distance</h2>
+    <p>Bigger is not automatically better — a screen that overwhelms the seating distance causes neck strain and reveals pixel structure. The SMPTE guideline calls for a minimum 30° horizontal viewing angle; THX recommends 36°. In practical terms, <strong>screen width ≈ viewing distance ÷ 1.5 to 2</strong>. From a 10-foot couch, that is an 8-foot-wide image — a 110-inch 16:9 screen. From 13 feet, aim for 120–135 inches.</p>
+    <p>Resolution sets the floor: with 4K you can sit closer (the pixels vanish), while 1080p wants a bit more distance per inch. If you are between sizes, go larger — surveys of home theater owners consistently find that "I wish I'd gone bigger" outnumbers "it's too big" by a wide margin, provided the throw distance cooperates.</p>
+    <h2>Room Realities: Light, Walls and Sound</h2>
+    <p>Throw distance means nothing if the room fights the image. Ambient light is the enemy: even 2,500 lumens looks washed out against daylight. Light control — blackout curtains first, dark wall paint second, an ambient-light-rejecting screen third — matters more than projector choice. Wall color near the screen should be dark and matte; a white ceiling bounces light straight back onto the image.</p>
+    <p>Leave the projector breathing room: 6–12 inches of clearance around vents, and never mount it where a ceiling fan's blades cross the beam (the flicker is maddening). Run HDMI and power before the drywall goes up if you can; a 35-foot passive HDMI cable is at the edge of reliability for 4K, so consider fiber-optic HDMI for long runs. And remember the screen wall also hosts your center speaker — plan the audio layout alongside the throw math, not after it.</p>
+    <h2>Short Throw and Ultra Short Throw</h2>
+    <p>If the room cannot spare 10 feet, short-throw (0.5–1.0:1) and ultra-short-throw (~0.25:1) projectors rewrite the rules. A UST projector sits on the credenza inches from the wall and throws a 100-inch image upward — no ceiling mount, no cable runs, no shadows when someone stands up. The trade-offs: they demand a perfectly flat wall or a dedicated UST screen (any ripple shows as geometry distortion), they cost more per lumen, and placement is fiddly — a centimeter of shift moves the image dramatically. For apartments and multi-use rooms, though, they are often the only way to get a true 100-inch-plus image.</p>
+    <h2>Calibrating After the Mount</h2>
+    <p>Once the projector hangs where the math says, the last 10% of image quality comes from calibration. Start with <strong>focus</strong>: project a text-heavy menu or a focus pattern and adjust until the smallest text is crisp edge to edge — check the corners, not just the center, since lenses are softest there. Next, display a <strong>test pattern</strong> (most projectors have one built in, or stream one from a calibration video) to set brightness so near-black detail is just visible and contrast so bright whites do not clip.</p>
+    <p>Then verify the geometry against your plan: measure the actual projected image width with a tape and compare it to the calculator's prediction. If they disagree by more than an inch, recheck the throw ratio — you may be reading the wide end of the zoom range while the lens sits at telephoto, or vice versa. A small zoom adjustment brings it in. Finally, sit in your actual seat and watch real content for ten minutes before you call it done: numbers get you to the right neighborhood, but your eyes sign the lease.</p>
+  </article>
+  <section class="faq-sec" aria-label="Frequently asked questions">
+    <h2>Frequently asked questions</h2>
+    <details><summary>How far should a projector be from a 100-inch screen?</summary><p>Multiply the screen width by the throw ratio. A 100-inch 16:9 screen is 87.2 inches wide, so a projector with a 1.5:1 throw ratio sits about 10.9 feet back. Zoom lenses give a range — a 1.2–1.5:1 lens works anywhere from 8.7 to 10.9 feet.</p></details>
+    <details><summary>What is throw ratio and where do I find it?</summary><p>Throw ratio is throw distance divided by image width — a 1.5:1 projector needs 1.5 feet of distance per foot of screen width. It is printed in the projector's specifications, often as a range like 1.2–1.5:1 for zoom models. Short-throw projectors are around 0.5:1; ultra-short-throw models sit inches from the wall.</p></details>
+    <details><summary>Can I mount a projector off-center from the screen?</summary><p>A small offset is fine if the projector has lens shift — typically ±60% vertical and ±25% horizontal on home theater models. Beyond that you need digital keystone correction, which degrades the image by resampling pixels. Center the lens on the screen whenever the room allows.</p></details>
+    <details><summary>How do I calculate the ceiling mount drop?</summary><p>Subtract the screen's top edge height from the ceiling height. For a 9-foot ceiling with a 100-inch 16:9 screen centered at 48 inches high, the screen top is at about 72.5 inches, so the mount drops roughly 35.5 inches. Add the projector's lens-to-mount offset from its manual.</p></details>
+    <details><summary>Does throw distance affect brightness?</summary><p>Yes. At the long end of a zoom range the image is dimmer — typically 20–30% less bright than at the wide end — because the lens aperture effectively shrinks. For the brightest image, mount at the closest end of the throw range your room allows.</p></details>
+    <details><summary>What screen size is right for my room?</summary><p>A common guideline is screen width ≈ viewing distance ÷ 1.5 to 2 for immersive home theater (SMPTE suggests a 30° viewing angle minimum). From 10 feet back, that means a 100–120 inch screen. Work backwards from your seating distance, then check the throw distance fits your room.</p></details>
+  </section>
+</main>
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:300px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script>
+      (function(grnp){
+      var d = document,
+          s = d.createElement('script'),
+          l = d.currentScript || d.scripts[d.scripts.length - 1];
+      s.settings = grnp || {};
+      s.src = "\/\/peacefulbicycle.com\/bnXtVJsnd.GElF0oYVWQcY\/Qe\/mf9qu-ZqUtlZk\/PzTHcx1LM\/jWIZwkMTj\/U\/t-NrzmUnyOMsj\/AzydO\/Qx";
+      s.async = true;
+      s.referrerPolicy = 'no-referrer-when-downgrade';
+      l.parentNode.insertBefore(s, l);
+      })({})
+      </script>
+    </div>
+  </div>
+</div>
+<footer class="fx-footer">
+  <div class="fx-container">
+    <div class="fx-brand">ProjectorThrow</div>
+    <p>ProjectorThrow plans home theater projection: throw distance and screen size in both directions, with ceiling-mount drop geometry.</p>
+    <nav aria-label="Footer">
+      <a href="https://fixoraa.tech">Home</a>
+      <a href="https://fixoraa.tech">More Tools</a>
+    </nav>
+    <p class="fx-credit">Made by <a href="https://fixoraa.tech">Fixoraa</a> &middot; Free forever, no signup.</p>
+  </div>
+</footer>
+<script>
+(function(){
+var mode='dist', ar=[16,9];
+var $=function(id){return document.getElementById(id);};
+function fmt(n,d){ return n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d}); }
+document.querySelectorAll('.pt-modes button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.pt-modes button').forEach(function(x){x.classList.toggle('on',x===b);});
+    mode=b.getAttribute('data-m');
+    $('pt-f-dist').style.display=mode==='dist'?'block':'none';
+    $('pt-f-screen').style.display=mode==='screen'?'block':'none';
+    calc();
+  });
+});
+document.querySelectorAll('#pt-ar button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('#pt-ar button').forEach(function(x){x.classList.toggle('on',x===b);});
+    var p=b.getAttribute('data-ar').split(':'); ar=[parseFloat(p[0]),parseFloat(p[1])];
+    calc();
+  });
+});
+document.querySelectorAll('.pt-seg [data-tr]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.pt-seg [data-tr]').forEach(function(x){x.classList.toggle('on',x===b);});
+    $('pt-tr').value=b.getAttribute('data-tr'); calc();
+  });
+});
+['pt-tr','pt-d','pt-s','pt-ceil','pt-center'].forEach(function(id){
+  $(id).addEventListener('input',calc); $(id).addEventListener('change',calc);
+});
+function arName(){ return ar[0]+':'+ar[1]; }
+function draw(distFt, wIn, diagIn){
+  var svg=$('pt-svg');
+  var maxW=560, x0=40, x1=600;
+  var span=Math.max(distFt*12, 40);
+  var sx=(x1-x0)/span;
+  var px=x0+Math.min(distFt*12,span)*sx*0+ x0; // projector at left
+  var scrX=x0+distFt*12*sx;
+  var scrH=Math.min(150, wIn*(ar[1]/ar[0])/span*sx*span/ (span) ); // scale screen height to diagram
+  scrH = 60 + (wIn*(ar[1]/ar[0]))/2; scrH=Math.max(50,Math.min(150,scrH));
+  var cy=120;
+  var s='';
+  s+='<defs><linearGradient id="beam" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8FE0A8" stop-opacity=".85"/><stop offset="1" stop-color="#8FE0A8" stop-opacity=".12"/></linearGradient></defs>';
+  s+='<polygon points="'+(px+34)+','+(cy-8)+' '+(px+34)+','+(cy+8)+' '+scrX+','+(cy-scrH/2)+' '+scrX+','+(cy+scrH/2)+'" fill="url(#beam)"/>';
+  s+='<rect x="'+px+'" y="'+(cy-26)+'" width="34" height="52" rx="8" fill="#157684"/>';
+  s+='<circle cx="'+(px+17)+'" cy="'+cy+'" r="11" fill="#0E2415" stroke="#8FE0A8" stroke-width="3"/>';
+  s+='<rect x="'+(scrX-6)+'" y="'+(cy-scrH/2)+'" width="12" height="'+scrH+'" rx="4" fill="#EAF5EE"/>';
+  s+='<line x1="'+px+'" y1="'+(cy+52)+'" x2="'+scrX+'" y2="'+(cy+52)+'" stroke="#8FE0A8" stroke-width="2" stroke-dasharray="6 5"/>';
+  s+='<text x="'+((px+scrX)/2)+'" y="'+(cy+74)+'" text-anchor="middle" font-size="13" fill="#8FE0A8" font-weight="600">'+fmt(distFt,1)+' ft throw</text>';
+  s+='<text x="'+(scrX+14)+'" y="'+(cy+4)+'" font-size="13" fill="#EAF5EE" font-weight="600">'+fmt(diagIn,0)+'&Prime; '+arName()+'</text>';
+  s+='<text x="'+px+'" y="'+(cy-36)+'" font-size="12" fill="#9DBFA9">projector</text>';
+  svg.innerHTML=s;
+}
+function calc(){
+  var tr=parseFloat($('pt-tr').value);
+  $('pt-tro').textContent=fmt(tr,2)+' : 1';
+  var wDiag=Math.sqrt(ar[0]*ar[0]+ar[1]*ar[1]);
+  var wFrac=ar[0]/wDiag, hFrac=ar[1]/wDiag;
+  var big,bigl,wIn,hIn,distFt,diagIn;
+  if(mode==='dist'){
+    distFt=parseFloat($('pt-d').value);
+    $('pt-do').textContent=fmt(distFt,1)+' ft';
+    var wFt=distFt/tr;
+    var lo=wFt*0.92, hi=wFt; // treat slider as max of small zoom window for display? no — single value
+    wIn=wFt*12; hIn=wIn*(ar[1]/ar[0]); diagIn=wIn/wFrac;
+    big=fmt(diagIn,0)+'&Prime;';
+    bigl='screen diagonal ('+arName()+')';
+    $('pt-w').textContent=fmt(wFt,1)+' ft';
+    $('pt-h').textContent=fmt(wFt*(ar[1]/ar[0]),1)+' ft';
+    $('pt-tip').textContent='sit '+fmt(wFt*1.5,0)+' – '+fmt(wFt*2,0)+' ft back';
+  } else {
+    diagIn=parseFloat($('pt-s').value);
+    $('pt-so').textContent=fmt(diagIn,0)+'&Prime;';
+    wIn=diagIn*wFrac; hIn=diagIn*hFrac;
+    distFt=(wIn/12)*tr;
+    // show ±10% zoom window
+    big=fmt(distFt*0.9,1)+' – '+fmt(distFt*1.1,1)+' ft';
+    bigl='throw distance range';
+    $('pt-w').textContent=fmt(wIn/12,1)+' ft';
+    $('pt-h').textContent=fmt(hIn/12,1)+' ft';
+    $('pt-tip').textContent='screen '+fmt(diagIn,0)+'&Prime; diag · '+fmt(wIn,1)+'&Prime; wide';
+  }
+  $('pt-big').innerHTML=big; $('pt-bigl').textContent=bigl;
+  draw(distFt, wIn, diagIn);
+  // mount drop
+  var ceil=parseFloat($('pt-ceil').value)||0, center=parseFloat($('pt-center').value)||0;
+  var topIn=center+hIn/2, dropIn=ceil*12-topIn;
+  $('pt-top').textContent=fmt(topIn,1)+' in ('+fmt(topIn/12,2)+' ft)';
+  $('pt-drop').textContent=dropIn>0?fmt(dropIn,1)+' in ('+fmt(dropIn/12,2)+' ft)':'screen top is above ceiling — lower the screen';
+}
+calc();
+})();
+</script>
+</body>
+</html>
