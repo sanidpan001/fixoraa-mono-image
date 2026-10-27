@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Depth of Field Calculator — Aperture, Distance &amp; Focal Length | DofCalc</title>
+<meta name="description" content="Depth of field from aperture, focal length and distance, with hyperfocal.">
+<link rel="canonical" href="https://image.fixoraa.tech/dofcalc/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Depth of Field Calculator — Aperture, Distance &amp; Focal Length | DofCalc">
+<meta property="og:description" content="Depth of field from aperture, focal length and distance, with hyperfocal.">
+<meta property="og:url" content="https://image.fixoraa.tech/dofcalc/">
+<meta property="og:type" content="website">
+<script defer src="https://t.fixoraa.tech/track.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "DofCalc",
+      "url": "https://image.fixoraa.tech/dofcalc/",
+      "applicationCategory": "Photography Tools",
+      "operatingSystem": "Web",
+      "description": "Depth of field from aperture, focal length and distance, with hyperfocal.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "What three things affect depth of field?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Aperture, focal length, and focus distance — plus sensor size behind the scenes. Wider apertures (small f-numbers), longer focal lengths, and closer focus distances all shrink depth of field. Smaller sensors (with their smaller circles of confusion) give deeper depth of field at the same aperture and framing." } },
+        { "@type": "Question", "name": "What is hyperfocal distance?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The focus distance that puts the far limit of depth of field at infinity — focus there and everything from half that distance to infinity is acceptably sharp. For a 24mm lens at f/8 on full frame it is about 8 feet. Landscape photographers use it to maximize front-to-back sharpness without stopping down into diffraction." } },
+        { "@type": "Question", "name": "Why is depth of field not evenly split around the focus point?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Optics: roughly one-third of the depth of field falls in front of the focus plane and two-thirds behind it. The split approaches 50/50 only at very close (macro) distances. That is why focusing one-third into a landscape scene works better than focusing on the horizon." } },
+        { "@type": "Question", "name": "Does sensor size change depth of field?",
+          "acceptedAnswer": { "@type": "Answer", "text": "For the same aperture, focal length, and distance — no. But in practice you frame the same shot, which means a shorter focal length or greater distance on a smaller sensor, and both deepen depth of field. This calculator handles it properly via each sensor's circle of confusion." } },
+        { "@type": "Question", "name": "What aperture gives the sharpest photo?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Usually 2–3 stops down from wide open — f/5.6 to f/8 on most lenses — where aberrations have faded but diffraction has not yet bitten. Beyond about f/11–f/16 (depending on sensor), diffraction softens the whole image even as depth of field keeps growing. Maximum depth of field and maximum sharpness are different goals." } },
+        { "@type": "Question", "name": "How do I get everything sharp in a landscape?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Use a wide-to-normal lens, stop down to f/8–f/11, and focus at (or near) the hyperfocal distance — this calculator shows it for your exact setup. For extreme near-to-far scenes, focus stacking (multiple shots at different focus distances, blended in software) beats any single aperture." } }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+:root{
+  --bg:#E1F9F3; --surface:#FFFFFF; --tint:#D2F4EC;
+  --accent:#147B62; --accent-deep:#671A19; --accent-ink:#FFFFFF;
+  --ink:#331B1B; --muted:#7C5A5A; --line:#EACACA;
+  --display:'Sora',system-ui,sans-serif; --body:'Sora',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.65;font-size:16px}
+.fx-container{max-width:1120px;margin:0 auto;padding:0 20px}
+/* header */
+.fx-header{background:#1f1313;color:#f7e8e8;position:sticky;top:0;z-index:50;border-bottom:3px solid var(--accent)}
+.fx-header .fx-container{display:flex;align-items:center;gap:14px;padding:11px 20px;flex-wrap:wrap}
+.fx-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.fx-tile{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 50% 50%,var(--accent) 0 34%,#1f1313 36% 52%,var(--accent) 54% 100%);display:flex;align-items:center;justify-content:center}
+.fx-name{font-weight:800;font-size:20px;letter-spacing:.02em}
+.fx-nav{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fx-btn{display:inline-block;padding:8px 18px;border-radius:999px;font-weight:700;font-size:13.5px;text-decoration:none;border:2px solid var(--accent);color:#f3c9c9}
+.fx-btn.solid{background:var(--accent);color:#fff;border-color:var(--accent)}
+.fx-btn:hover{background:rgba(139,36,35,.25)}
+.fx-badge{display:inline-block;padding:7px 14px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:12.5px}
+/* hero */
+.dc-hero{padding:38px 0 6px}
+.dc-eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:12px}
+.dc-eyebrow::before{content:"◉ "}
+.dc-hero h1{font-size:clamp(28px,4.4vw,42px);line-height:1.14;letter-spacing:-.02em;font-weight:800;margin-bottom:10px}
+.dc-hero p{font-size:17px;color:var(--muted);max-width:660px}
+/* tool */
+.dc-bench{margin:26px 0 8px;background:var(--surface);border:2px solid var(--ink);border-radius:6px;overflow:hidden;box-shadow:8px 8px 0 var(--tint)}
+.dc-bench-head{background:#1f1313;color:#f7e8e8;padding:13px 22px;display:flex;align-items:center;gap:12px}
+.dc-bench-head h2{font-size:14px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.dc-bench-head .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.dc-body{padding:26px}
+.sensors{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.sensors button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--muted)}
+.sensors button.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.dial{margin-bottom:22px}
+.dial .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.dial label{font-weight:700;font-size:14px}
+.dial .val{font-size:22px;font-weight:800;color:var(--accent-deep);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);height:32px;cursor:pointer}
+.dial .ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:600}
+/* zone diagram */
+.zone{margin:26px 0 8px;border:2px solid var(--ink);border-radius:6px;padding:18px;background:var(--bg)}
+.zone svg{width:100%;height:auto;display:block}
+.dc-reads{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+.read{background:var(--surface);border:2px solid var(--line);border-radius:6px;padding:14px;text-align:center}
+.read.hero{border-color:var(--accent);background:var(--tint)}
+.read .v{font-size:26px;font-weight:800;color:var(--accent-deep);font-variant-numeric:tabular-nums}
+.read .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:4px}
+/* article */
+.article-sec{margin:40px 0;max-width:780px}
+.article-sec h2{font-size:23px;letter-spacing:-.015em;margin:34px 0 12px;font-weight:800;color:var(--accent-deep)}
+.article-sec p{margin-bottom:14px}
+.article-sec ul,.article-sec ol{margin:0 0 14px 22px}
+.article-sec li{margin-bottom:6px}
+/* faq */
+.faq-sec{margin:36px 0;max-width:780px}
+.faq-sec h2{font-size:23px;font-weight:800;letter-spacing:-.015em;margin-bottom:16px;color:var(--accent-deep)}
+.faq-sec details{background:var(--surface);border:2px solid var(--line);border-radius:6px;margin-bottom:10px;overflow:hidden}
+.faq-sec summary{padding:15px 18px;font-weight:700;cursor:pointer;list-style:none;font-size:15.5px}
+.faq-sec summary::-webkit-details-marker{display:none}
+.faq-sec summary:hover{color:var(--accent)}
+.faq-sec details[open] summary{border-bottom:2px solid var(--line);color:var(--accent-deep)}
+.faq-sec details p{padding:14px 18px;font-size:15px}
+/* footer */
+.fx-footer{background:#1f1313;color:#efdbdb;margin-top:44px;padding:40px 0 34px}
+.fx-footer .fx-brand{font-size:22px;font-weight:800;margin-bottom:8px;color:#fff}
+.fx-footer p{font-size:15px;color:#c9a9a9;max-width:640px;margin-bottom:14px}
+.fx-footer nav{display:flex;gap:18px;margin-bottom:16px}
+.fx-footer nav a{color:#fff;font-weight:700;text-decoration:none;border-bottom:2px solid var(--accent)}
+.fx-credit{font-size:14px!important}
+.fx-credit a{color:#e89b9b;font-weight:700}
+@media(max-width:760px){
+  .dc-reads{grid-template-columns:1fr 1fr}
+  .fx-nav{margin-left:0}
+}
+</style>
+</head>
+<body>
+<header class="fx-header">
+  <div class="fx-container">
+    <a class="fx-logo" href="https://image.fixoraa.tech/dofcalc/" aria-label="DofCalc home">
+      <span class="fx-tile" aria-hidden="true"></span>
+      <span class="fx-name">DofCalc</span>
+    </a>
+    <nav class="fx-nav" aria-label="Site">
+      <a class="fx-btn" href="https://fixoraa.tech">Home</a>
+      <a class="fx-btn solid" href="https://fixoraa.tech">More Tools</a>
+      <span class="fx-badge">&#8734; Unlimited Free Usage</span>
+    </nav>
+  </div>
+</header>
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+<main class="fx-container">
+  <section class="dc-hero">
+    <div class="dc-eyebrow">Lens bench · Circle of confusion corrected</div>
+    <h1>Depth of Field Calculator</h1>
+    <p>Turn the dials — aperture, focal length, distance — and watch the sharp zone grow and shrink, with hyperfocal distance for every setup.</p>
+  </section>
+
+  <section class="dc-bench" aria-label="DofCalc tool">
+    <div class="dc-bench-head"><span class="dot"></span><h2>Lens bench</h2></div>
+    <div class="dc-body">
+      <div class="sensors" id="dc-sensors" role="group" aria-label="Sensor size"></div>
+      <div class="dial">
+        <div class="top"><label for="dc-ap">Aperture</label><span class="val" id="dc-ap-v">f/2.8</span></div>
+        <input type="range" id="dc-ap" min="0" max="8" step="1" value="3">
+        <div class="ticks"><span>f/1.4</span><span>f/2.8</span><span>f/5.6</span><span>f/16</span></div>
+      </div>
+      <div class="dial">
+        <div class="top"><label for="dc-fl">Focal length</label><span class="val" id="dc-fl-v">50 mm</span></div>
+        <input type="range" id="dc-fl" min="0" max="9" step="1" value="5">
+        <div class="ticks"><span>14</span><span>35</span><span>85</span><span>200 mm</span></div>
+      </div>
+      <div class="dial">
+        <div class="top"><label for="dc-dist">Focus distance</label><span class="val" id="dc-dist-v">10 ft</span></div>
+        <input type="range" id="dc-dist" min="1" max="100" step="0.5" value="10">
+        <div class="ticks"><span>1 ft</span><span>25 ft</span><span>50 ft</span><span>100 ft</span></div>
+      </div>
+      <div class="zone">
+        <svg id="dc-svg" viewBox="0 0 640 120" role="img" aria-label="Focus zone diagram"></svg>
+      </div>
+      <div class="dc-reads" aria-live="polite">
+        <div class="read"><div class="v" id="dc-near">–</div><div class="k">Near limit</div></div>
+        <div class="read"><div class="v" id="dc-far">–</div><div class="k">Far limit</div></div>
+        <div class="read hero"><div class="v" id="dc-total">–</div><div class="k">Total DoF</div></div>
+        <div class="read"><div class="v" id="dc-hyper">–</div><div class="k">Hyperfocal</div></div>
+      </div>
+    </div>
+  </section>
+
+  <article class="article-sec" aria-label="Guide">
+    <h2>What Depth of Field Really Is</h2>
+    <p>A lens can only focus at one exact distance — everything else is varying degrees of blur. <strong>Depth of field</strong> is the zone around that focus plane where the blur is small enough that our eyes read it as sharp. "Small enough" is formalized as the <strong>circle of confusion</strong>: the largest blur spot still perceived as a point, about 0.03 mm on full frame, 0.02 mm on APS-C, smaller still on tiny sensors. Change the sensor and you change the definition of sharp — which is why this calculator corrects for sensor size instead of pretending one formula fits all.</p>
+    <p>Depth of field is the creative dial of photography. Shallow DoF isolates a subject against creamy bokeh; deep DoF renders a landscape tack-sharp from foreground flowers to distant peaks. Both are the same physics, run in opposite directions.</p>
+    <h2>The Three Controls: Aperture, Focal Length, Distance</h2>
+    <p><strong>Aperture</strong> is the strongest lever most photographers touch: f/1.4 gives razor-thin focus, f/16 gives deep focus. Each stop down roughly doubles the depth of field. <strong>Focal length</strong> matters enormously — double the focal length and depth of field quarters (at the same distance and aperture), which is why telephoto portraits melt backgrounds while phone-camera wides seem sharp everywhere. <strong>Focus distance</strong> is the quiet giant: halve the distance and DoF quarters too. Macro photographers live inside this brutal math, where depth of field is measured in millimeters and focus stacking becomes mandatory.</p>
+    <p>Try it on the bench above: set 85mm f/1.8 at 10 feet, then drag the distance to 30 feet and watch the zone explode. Same lens, same aperture — utterly different image.</p>
+    <h2>Hyperfocal Distance: The Landscape Superpower</h2>
+    <p>The <strong>hyperfocal distance</strong> is the focus distance at which the far limit of depth of field lands exactly at infinity. Focus there, and everything from <em>half</em> the hyperfocal distance to infinity is acceptably sharp — the maximum possible depth of field for that aperture and lens. For a 24mm at f/8 on full frame, it is about 8 feet: focus at 8 feet and the zone runs from 4 feet to infinity.</p>
+    <p>The formula is H = f²/(N·c) + f, where f is focal length, N the f-number, and c the circle of confusion. You do not need to memorize it — the bench computes it live — but knowing it exists explains why wide lenses and small apertures are the landscape kit: both shrink H dramatically. In the field, the practical method is to focus roughly one-third into the scene, which approximates hyperfocal for typical landscape distances.</p>
+    <h2>The One-Third / Two-Thirds Split</h2>
+    <p>Depth of field is <strong>not</strong> centered on the focus point. Roughly <strong>one-third falls in front</strong> and <strong>two-thirds behind</strong> — the zone diagram above shows this asymmetry live. The split evens out toward 50/50 only at macro distances. This is why focusing on the horizon wastes half your depth of field on the sky (already at infinity) while the foreground goes soft: pull focus forward to about a third of the way into the important depth, and the zone redistributes where it matters.</p>
+    <h2>Sensor Size and the Crop-Factor Truth</h2>
+    <p>Here is the subtlety most calculators fumble: for identical aperture, focal length, and distance, sensor size changes nothing optically — but nobody shoots that way. In practice you frame the same subject, which on a smaller sensor means a shorter focal length or a greater distance, and <em>those</em> deepen depth of field. A Micro Four Thirds shooter at f/2.8 gets roughly the depth of field a full-frame shooter gets at f/5.6 for equivalent framing. Phone photographers get enormous depth of field "for free" from tiny sensors and short lenses — which is exactly why portrait mode is computational blur rather than optics. The bench handles all of this through each sensor's true circle of confusion.</p>
+    <h2>Aperture vs. Sharpness: The Diffraction Trade</h2>
+    <p>Stopping down increases depth of field but eventually softens everything via <strong>diffraction</strong> — light bending around the aperture blades. Most lenses peak around f/5.6–f/8; beyond f/11–f/16 (sooner on high-resolution sensors), diffraction visibly degrades fine detail even as DoF keeps growing. So "f/22 for maximum sharpness" is a myth: f/22 gives maximum <em>depth of field</em> at reduced <em>overall sharpness</em>. For landscapes, f/8–f/11 plus hyperfocal focusing is the sweet spot; reserve f/16+ for when you truly need the zone and accept the trade.</p>
+    <h2>Portraits: Controlling the Melt</h2>
+    <p>For creamy backgrounds, the recipe is long lens + wide aperture + close distance + separation: an 85mm at f/1.8, subject 10 feet away with the background 30 feet behind, dissolves distractions into bokeh. But watch the near limit — at f/1.4 and close range, depth of field can be under an inch, so focus on the near eye and accept that the far ear goes soft. For groups, stop down: f/4–f/5.6 keeps two rows of faces inside the zone. The bench's near/far readouts tell you exactly how much room your subjects have to lean.</p>
+    <h2>When One Shot Isn't Enough: Focus Stacking</h2>
+    <p>Macro and extreme near-far landscapes defeat single-shot depth of field — physics caps the zone no matter the aperture. <strong>Focus stacking</strong> shoots a bracket of focus distances and blends the sharp slices in software, delivering impossible depth from foreground to infinity. Many cameras now bracket automatically; the technique pairs naturally with this calculator, which tells you how far apart to space the slices (overlap each frame's far limit with the next frame's near limit).</p>
+    <h2>Circle of Confusion, Demystified</h2>
+    <p>The circle of confusion sounds like philosophy but it is just print math. When a point of light is slightly out of focus, it renders as a small disc — the <strong>circle of confusion</strong>. If that disc is tiny enough, your eye reads it as a sharp point at normal viewing distance. The standard assumes an 8×10-inch print viewed from about 10 inches by someone with average vision, which works out to roughly 0.03 mm on full frame. Smaller sensors enlarge their images more to reach the same print size, so their acceptable disc shrinks proportionally: 0.02 mm for APS-C, 0.015 mm for Micro Four Thirds, down to about 0.006 mm for a phone sensor. Pixel-peep at 100% on a high-resolution sensor and you will see blur the standard calls "sharp" — the standard predates 60-megapixel files, so treat the calculator's zone as the <em>generous</em> definition and stop down a touch more when critical sharpness matters.</p>
+    <h2>Phone Cameras and Computational Bokeh</h2>
+    <p>Phone cameras live at the extreme end of the depth-of-field spectrum: tiny sensors, short focal lengths, and enormous inherent depth of field. A phone at f/1.8 has roughly the depth of field of a full-frame camera at f/11 or smaller for the same framing — which is why everything from your coffee to the mountains looks sharp, and why <strong>portrait mode</strong> exists. Portrait mode is not optics; it is a depth map estimated from dual cameras or machine learning, with blur painted on synthetically. It has improved enormously, but it still struggles with glasses, hair wisps, and complex edges where true optical blur would be perfect. Understanding real depth of field helps you see through the simulation: when the phone nails it, it is imitating exactly the physics this calculator models.</p>
+    <h2>Putting It All Together</h2>
+    <p>The workflow: pick your sensor, set the lens and aperture you want to shoot, dial the distance, and read the zone. If the far limit will not reach your background, either stop down, shorten the lens, or focus at the hyperfocal distance the bench displays. Depth of field stops being guesswork the moment you can see the numbers move — drag the dials above until the behavior is in your fingers, then take it outside.</p>
+  </article>
+  <section class="faq-sec" aria-label="Frequently asked questions">
+    <h2>Frequently asked questions</h2>
+    <details><summary>What three things affect depth of field?</summary><p>Aperture, focal length, and focus distance — plus sensor size behind the scenes. Wider apertures (small f-numbers), longer focal lengths, and closer focus distances all shrink depth of field. Smaller sensors (with their smaller circles of confusion) give deeper depth of field at the same aperture and framing.</p></details>
+    <details><summary>What is hyperfocal distance?</summary><p>The focus distance that puts the far limit of depth of field at infinity — focus there and everything from half that distance to infinity is acceptably sharp. For a 24mm lens at f/8 on full frame it is about 8 feet. Landscape photographers use it to maximize front-to-back sharpness without stopping down into diffraction.</p></details>
+    <details><summary>Why is depth of field not evenly split around the focus point?</summary><p>Optics: roughly one-third of the depth of field falls in front of the focus plane and two-thirds behind it. The split approaches 50/50 only at very close (macro) distances. That is why focusing one-third into a landscape scene works better than focusing on the horizon.</p></details>
+    <details><summary>Does sensor size change depth of field?</summary><p>For the same aperture, focal length, and distance — no. But in practice you frame the same shot, which means a shorter focal length or greater distance on a smaller sensor, and both deepen depth of field. This calculator handles it properly via each sensor's circle of confusion.</p></details>
+    <details><summary>What aperture gives the sharpest photo?</summary><p>Usually 2–3 stops down from wide open — f/5.6 to f/8 on most lenses — where aberrations have faded but diffraction has not yet bitten. Beyond about f/11–f/16 (depending on sensor), diffraction softens the whole image even as depth of field keeps growing. Maximum depth of field and maximum sharpness are different goals.</p></details>
+    <details><summary>How do I get everything sharp in a landscape?</summary><p>Use a wide-to-normal lens, stop down to f/8–f/11, and focus at (or near) the hyperfocal distance — this calculator shows it for your exact setup. For extreme near-to-far scenes, focus stacking (multiple shots at different focus distances, blended in software) beats any single aperture.</p></details>
+  </section>
+</main>
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:300px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script>
+      (function(grnp){
+      var d = document,
+          s = d.createElement('script'),
+          l = d.currentScript || d.scripts[d.scripts.length - 1];
+      s.settings = grnp || {};
+      s.src = "\/\/peacefulbicycle.com\/bnXtVJsnd.GElF0oYVWQcY\/Qe\/mf9qu-ZqUtlZk\/PzTHcx1LM\/jWIZwkMTj\/U\/t-NrzmUnyOMsj\/AzydO\/Qx";
+      s.async = true;
+      s.referrerPolicy = 'no-referrer-when-downgrade';
+      l.parentNode.insertBefore(s, l);
+      })({})
+      </script>
+    </div>
+  </div>
+</div>
+<footer class="fx-footer">
+  <div class="fx-container">
+    <div class="fx-brand">DofCalc</div>
+    <p>DofCalc maps your sharp zone from aperture, focal length, and distance — with true sensor-size correction and hyperfocal distance for every setup.</p>
+    <nav aria-label="Footer">
+      <a href="https://fixoraa.tech">Home</a>
+      <a href="https://fixoraa.tech">More Tools</a>
+    </nav>
+    <p class="fx-credit">Made by <a href="https://fixoraa.tech">Fixoraa</a> &middot; Free forever, no signup.</p>
+  </div>
+</footer>
+<script>
+(function(){
+"use strict";
+var SENSORS=[
+  {id:'ff', n:'Full frame', c:0.03},
+  {id:'aps', n:'APS-C', c:0.02},
+  {id:'mft', n:'Micro 4/3', c:0.015},
+  {id:'one', n:'1-inch', c:0.011},
+  {id:'phone', n:'Phone', c:0.006}
+];
+var APS=[1.4,1.8,2,2.8,4,5.6,8,11,16];
+var FLS=[14,20,24,28,35,50,85,105,135,200];
+function dofMath(o){
+  var c=SENSORS[0].c;
+  for(var i=0;i<SENSORS.length;i++) if(SENSORS[i].id===o.sensor) c=SENSORS[i].c;
+  var f=parseFloat(o.focal)||50, N=parseFloat(o.aperture)||2.8;
+  var sFt=Math.max(0.1,parseFloat(o.distFt)||10);
+  var s=sFt*304.8;
+  var H=f*f/(N*c)+f;
+  var near=H*s/(H+(s-f));
+  var den=H-(s-f);
+  var far=den>0?H*s/den:Infinity;
+  var total=isFinite(far)?far-near:Infinity;
+  function ft(mm){ return Math.round(mm/304.8*100)/100; }
+  return { near:ft(near), far:isFinite(far)?ft(far):Infinity, total:isFinite(total)?ft(total):Infinity,
+    hyper:ft(H), sensor:c, focal:f, ap:N, distFt:sFt };
+}
+window.__fx = { dof: dofMath };
+
+var sensor='ff';
+var sEl=document.getElementById('dc-sensors');
+SENSORS.forEach(function(sn){
+  var b=document.createElement('button'); b.type='button'; b.textContent=sn.n;
+  if(sn.id===sensor) b.classList.add('on');
+  b.addEventListener('click',function(){
+    sensor=sn.id;
+    Array.prototype.forEach.call(sEl.children,function(x){x.classList.remove('on');});
+    b.classList.add('on'); calc();
+  });
+  sEl.appendChild(b);
+});
+function read(){
+  return { sensor:sensor,
+    aperture:APS[parseInt(document.getElementById('dc-ap').value,10)],
+    focal:FLS[parseInt(document.getElementById('dc-fl').value,10)],
+    distFt:parseFloat(document.getElementById('dc-dist').value) };
+}
+var NS='http://www.w3.org/2000/svg';
+function draw(m){
+  var svg=document.getElementById('dc-svg'); svg.innerHTML='';
+  function E(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e;}
+  function T(x,y,s,anchor){var t=E('text',{x:x,y:y,'font-size':11,'text-anchor':anchor||'middle',fill:'#331B1B','font-family':'Sora'});t.textContent=s;return t;}
+  var maxD=Math.max(m.distFt*1.6, isFinite(m.far)?m.far*1.15:m.distFt*3, 2);
+  function X(d){ return 60+(d/maxD)*520; }
+  E('line',{x1:40,y1:60,x2:620,y2:60,stroke:'#331B1B','stroke-width':2});
+  E('rect',{x:28,y:48,width:24,height:24,rx:4,fill:'#147B62'});
+  T(40,100,'camera');
+  var nX=X(Math.min(m.near,maxD)), fX=isFinite(m.far)?X(Math.min(m.far,maxD)):620, dX=X(Math.min(m.distFt,maxD));
+  E('rect',{x:nX,y:46,width:Math.max(2,fX-nX),height:28,fill:'#147B62',opacity:.28,rx:4});
+  E('line',{x1:nX,y1:40,x2:nX,y2:80,stroke:'#147B62','stroke-width':2});
+  T(nX,30,m.near+' ft');
+  T(nX,98,'near');
+  if(isFinite(m.far)){ E('line',{x1:fX,y1:40,x2:fX,y2:80,stroke:'#147B62','stroke-width':2}); T(Math.min(fX,600),30,m.far+' ft'); T(Math.min(fX,600),98,'far'); }
+  else { T(612,30,'∞'); T(612,98,'far'); }
+  E('line',{x1:dX,y1:34,x2:dX,y2:86,stroke:'#671A19','stroke-width':3});
+  T(dX,22,'focus '+m.distFt+' ft');
+  T(620,112,'log scale approx');
+}
+function fmtF(v){ return isFinite(v)?v.toFixed(2)+' ft':'∞'; }
+function calc(){
+  var m=read(), r=dofMath(m);
+  document.getElementById('dc-ap-v').textContent='f/'+m.aperture;
+  document.getElementById('dc-fl-v').textContent=m.focal+' mm';
+  document.getElementById('dc-dist-v').textContent=m.distFt+' ft';
+  document.getElementById('dc-near').textContent=fmtF(r.near);
+  document.getElementById('dc-far').textContent=fmtF(r.far);
+  document.getElementById('dc-total').textContent=fmtF(r.total);
+  document.getElementById('dc-hyper').textContent=r.hyper.toFixed(2)+' ft';
+  draw(r);
+}
+['dc-ap','dc-fl','dc-dist'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',calc);
+});
+calc();
+})();
+</script>
+</body>
+</html>
